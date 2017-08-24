@@ -38,6 +38,9 @@
      <pf-card head-title="Cluster Utilization" show-top-border="true" footer="footerConfig" filter="filterConfig" style="width: 50%">
        <pf-trends-chart config="configSingle" chart-data="dataSingle"></pf-trends-chart>
      </pf-card>
+      <pf-card head-title="Cluster Utilization" show-top-border="true" footer="footerConfig" filter="filterConfig" style="width: 50%">
+        <pf-trends-chart config="configRightLabel" chart-data="dataSingle"></pf-trends-chart>
+      </pf-card>
      <label class="label-title">Card with Multiple Trends</label>
      <pf-card head-title="Performance" sub-title="Last 30 Days" show-top-border="false"
           show-titles-separator="false" style="width: 65%" footer="actionBarConfig">
@@ -81,8 +84,18 @@
          'layout'       : 'compact',
          'valueType'    : 'actual',
          'units'        : 'TB',
-         'tooltipType'  : 'percentage'
+         'tooltipType'  : 'percentage',
        };
+
+       $scope.configRightLabel = {
+       'chartId'      : 'exampleRightLabelTrendsChart',
+         'title'        : 'Storage Capacity',
+         'layout'       : 'compact',
+         'valueType'    : 'actual',
+         'units'        : 'TB',
+         'tooltipType'  : 'percentage',
+         'compactLabelPosition'  : 'right'
+       }
 
        $scope.dataSingle = {
          'total': '250',
