@@ -146,7 +146,8 @@ angular.module( 'patternfly.utils', ['ui.bootstrap'] );
  *   Views module for patternfly.
  *
  */
-angular.module('patternfly.views', ['patternfly.utils', 'patternfly.filters', 'patternfly.sort', 'patternfly.charts', 'dndLists']);
+angular.module('patternfly.views', ['patternfly.utils', 'patternfly.filters', 'patternfly.sort', 'patternfly.charts',
+  'dndLists', 'patternfly.pagination']);
 ;/**
  * @name  PatternFly Wizard
  *
@@ -3578,9 +3579,9 @@ angular.module('patternfly.card').component('pfCard', {
           chartData = ctrl.config;
           if (chartData) {
             chartData.bindto = '#' + $attrs.id;
-            // always re-generate donut pct chart because it's colors
-            // change based on data and thresholds
-            if (!chart || $attrs.id.indexOf('donutPctChart')) {
+            // only re-generate donut pct chart if it has a threshold object
+            // because it's colors will change based on data and thresholds
+            if (!chart || ($attrs.id.indexOf('donutPctChart') !== -1 && chartData.thresholds)) {
               chart = c3.generate(chartData);
             } else {
               //if chart is already created, then we only need to re-load data
@@ -4674,10 +4675,30 @@ angular.module('patternfly.charts').component('pfHeatmap', {
       });
     };
 
-    ctrl.updateAll = function () {
-      // Need to deep watch changes in chart data
-      prevData = angular.copy(ctrl.data);
+    var updateDisplay = function () {
+      setStyles();
 
+      if (ctrl.chartDataAvailable !== false && ctrl.data) {
+        ctrl.loadingDone = true;
+
+        // Allow the style change to take effect to update the container size
+        $timeout(function () {
+          setSizes();
+          redraw();
+        });
+      }
+    };
+
+    var handleDataUpdate = function () {
+      prevData = angular.copy(ctrl.data);
+      updateDisplay();
+    };
+
+    var debounceResize = _.debounce(function () {
+      updateDisplay();
+    }, 250, 500);
+
+    var updateConfig = function () {
       //Allow overriding of defaults
       if (ctrl.maxBlockSize === undefined || isNaN(ctrl.maxBlockSize)) {
         ctrl.maxSize = 64;
@@ -4727,46 +4748,36 @@ angular.module('patternfly.charts').component('pfHeatmap', {
       }
       ctrl.height = ctrl.height || heightDefault;
       ctrl.showLegend = ctrl.showLegend || (ctrl.showLegend === undefined);
-      ctrl.loadingDone = false;
-
-      angular.element($window).on('resize', function () {
-        setSizes();
-        redraw();
-      });
-
-      ctrl.thisComponent = $element[0].querySelector('.heatmap-pf-svg');
-
-      $timeout(function () {
-        setStyles();
-        setSizes();
-        redraw();
-      });
     };
+
+    ctrl.loadingDone = false;
 
     ctrl.$onChanges = function (changesObj) {
       if (changesObj.chartDataAvailable && !changesObj.chartDataAvailable.isFirstChange()) {
         setStyles();
-      } else {
-        ctrl.updateAll();
-        ctrl.loadingDone = true;
+      } else if (!changesObj.data) {
+        updateConfig();
+        updateDisplay();
       }
     };
 
     ctrl.$doCheck = function () {
       // do a deep compare on chartData and config
       if (!angular.equals(ctrl.data, prevData)) {
-        setStyles();
-        if (ctrl.chartDataAvailable !== false) {
-          setSizes();
-          redraw();
-        }
+        handleDataUpdate();
       }
     };
 
     ctrl.$postLink = function () {
-      setStyles();
-      setSizes();
-      redraw();
+      ctrl.thisComponent = $element[0].querySelector('.heatmap-pf-svg');
+      updateConfig();
+      handleDataUpdate();
+
+      angular.element($window).on('resize', debounceResize);
+    };
+
+    ctrl.$onDestroy = function () {
+      angular.element($window).off('resize', debounceResize);
     };
   }]
 });
@@ -7380,7 +7391,7 @@ angular.module('patternfly.charts').component('pfUtilizationTrendChart', {
  * <li>.id          - (String) Optional unique Id for the filter field, useful for comparisons
  * <li>.title       - (String) The title to display for the filter field
  * <li>.placeholder - (String) Text to display when no filter value has been entered
- * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple values per category. Optional, default is `false`
+ * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple categories and values. Optional, default is `false`
  * <li>.filterType  - (String) The filter input field type (any html input type, or 'select' for a single select box or 'complex-select' for a category select box)
  * <li>.filterValues - (Array) List of valid select values used when filterType is 'select' or 'complex-select' (in where these values serve as case insensitve keys for .filterCategories objects)
  * <li>.filterCategories - (Array of (Objects)) For 'complex-select' only, array of objects whoes keys (case insensitive) match the .filterValues, these objects include each of the filter fields above (sans .placeholder)
@@ -7447,26 +7458,26 @@ angular.module('patternfly.charts').component('pfUtilizationTrendChart', {
             name: "John Smith",
             address: "415 East Main Street, Norfolk, Virginia",
             birthMonth: 'October',
-            car: 'Subaru-Outback'
+            car: 'subie-out'
 
           },
           {
             name: "Frank Livingston",
             address: "234 Elm Street, Pittsburgh, Pennsylvania",
             birthMonth: 'March',
-            car: 'Toyota-Prius'
+            car: 'Toyota-pri'
           },
           {
             name: "Judy Green",
             address: "2 Apple Boulevard, Cincinatti, Ohio",
             birthMonth: 'December',
-            car: 'Subaru-Impreza'
+            car: 'subie-Impreza'
           },
           {
             name: "Pat Thomas",
             address: "50 Second Street, New York, New York",
-            birthMonth: 'February',
-            car: 'Subaru-Outback'
+            birthMonth: 'jan',
+            car: 'subie-Crosstrek'
           }
         ];
         $scope.items = $scope.allItems;
@@ -7480,9 +7491,10 @@ angular.module('patternfly.charts').component('pfUtilizationTrendChart', {
           } else if (filter.id === 'address') {
             match = item.address.match(re) !== null;
           } else if (filter.id === 'birthMonth') {
-            match = item.birthMonth === filter.value;
+            match = item.birthMonth === filter.value.id || item.birthMonth === filter.value;
           } else if (filter.id === 'car') {
-            match = item.car === filter.value;
+            match = item.car === ((filter.value.filterCategory.id || filter.value.filterCategory)
+            + filter.value.filterDelimiter + (filter.value.filterValue.id || filter.value.filterValue));
           }
           return match;
         };
@@ -7516,7 +7528,16 @@ angular.module('patternfly.charts').component('pfUtilizationTrendChart', {
         var filterChange = function (filters) {
         $scope.filtersText = "";
           filters.forEach(function (filter) {
-            $scope.filtersText += filter.title + " : " + filter.value + "\n";
+            $scope.filtersText += filter.title + " : ";
+            if (filter.value.filterCategory) {
+              $scope.filtersText += ((filter.value.filterCategory.title || filter.value.filterCategory)
+              + filter.value.filterDelimiter + (filter.value.filterValue.title || filter.value.filterValue));
+            } else if (filter.value.title){
+              $scope.filtersText += filter.value.title;
+            } else {
+              $scope.filtersText += filter.value;
+            }
+            $scope.filtersText += "\n";
           });
           applyFilters(filters);
         };
@@ -7540,24 +7561,24 @@ angular.module('patternfly.charts').component('pfUtilizationTrendChart', {
               title:  'Birth Month',
               placeholder: 'Filter by Birth Month',
               filterType: 'select',
-              filterValues: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+              filterValues: [{title:'January', id:'jan'}, {title:'Feb', id:'February'}, 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
             },
            {
               id: 'car',
               title:  'Car',
               placeholder: 'Filter by Car Make',
               filterType: 'complex-select',
-              filterValues: ['Subaru', 'Toyota'],
+              filterValues: [{title:'Subaru', id:'subie'}, 'Toyota'],
               filterDelimiter: '-',
               filterCategoriesPlaceholder: 'Filter by Car Model',
-              filterCategories: {subaru: {
-                id: 'subaru',
+              filterCategories: {subie: {
+                id: 'subie',
                 title:  'Subaru',
-                filterValues: ['Outback', 'Crosstrek', 'Impreza']},
+                filterValues: [{title:'Outback', id:'out'}, 'Crosstrek', 'Impreza']},
                 toyota: {
                 id: 'toyota',
                 title:  'Toyota',
-                filterValues: ['Prius', 'Corolla', 'Echo']}
+                filterValues: [{title:'Prius', id:'pri'}, 'Corolla', 'Echo']}
                 }
             }
           ],
@@ -7687,14 +7708,8 @@ angular.module('patternfly.filters').component('pfFilterPanelResults', {
       return angular.isDefined(_.find(ctrl.config.appliedFilters, {title: filter.title, value: filter.value}));
     }
 
-    function findDuplicateCategory (field, value) {
-      var duplicateValue;
-
-      function searchAppliedFilters (item) {
-        return _.includes(item.value, _.split(value, field.filterDelimiter, 1)) ? duplicateValue = item : null;
-      }
-
-      return _.some(ctrl.config.appliedFilters, searchAppliedFilters) ? duplicateValue : null;
+    function findDuplicateComplexSelect (item) {
+      return item.value.filterCategory;
     }
 
     function enforceSingleSelect (filter) {
@@ -7715,8 +7730,8 @@ angular.module('patternfly.filters').component('pfFilterPanelResults', {
           enforceSingleSelect(newFilter);
         }
 
-        if (field.filterType === 'complex-select' && !field.filterMultiselect && findDuplicateCategory(field, value)) {
-          _.remove(ctrl.config.appliedFilters, findDuplicateCategory(field, value));
+        if (field.filterType === 'complex-select' && !field.filterMultiselect) {
+          _.remove(ctrl.config.appliedFilters, findDuplicateComplexSelect);
         }
 
         ctrl.config.appliedFilters.push(newFilter);
@@ -7744,7 +7759,7 @@ angular.module('patternfly.filters').component('pfFilterPanelResults', {
  * <li>.id          - (String) Optional unique Id for the filter field, useful for comparisons
  * <li>.title       - (String) The title to display for the filter field
  * <li>.placeholder - (String) Text to display when no filter value has been entered
- * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple values per category. Optional, default is `false`
+ * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple categories and values. Optional, default is `false`
  * <li>.filterType  - (String) The filter input field type (any html input type, or 'select' for a single select box or 'complex-select' for a category select box)
  * <li>.filterValues - (Array) List of valid select values used when filterType is 'select' or 'complex-select' (in where these values serve as case insensitve keys for .filterCategories objects)
  * <li>.filterCategories - (Array of (Objects)) For 'complex-select' only, array of objects whoes keys (case insensitive) match the .filterValues, these objects include each of the filter fields above (sans .placeholder)
@@ -7805,19 +7820,25 @@ angular.module('patternfly.filters').component('pfFilterFields', {
             break;
           }
           if (ctrl.filterCategory && ctrl.filterValue) {
-            ctrl.addFilterFn(ctrl.currentField, ctrl.filterCategory + ctrl.currentField.filterDelimiter + ctrl.filterValue);
+            ctrl.addFilterFn(ctrl.currentField, {
+              filterCategory: ctrl.filterCategory,
+              filterDelimiter: ctrl.currentField.filterDelimiter,
+              filterValue: ctrl.filterValue
+            });
           }
         } else {
           ctrl.addFilterFn(ctrl.currentField, filterValue);
-          ctrl.currentValue = null;
+          ctrl.currentValue = filterValue;
         }
       }
     }
 
     function onValueKeyPress (keyEvent) {
-      if (keyEvent.which === 13) {
+      if (keyEvent.which === 13 && ctrl.currentValue && ctrl.currentValue.length > 0) {
         ctrl.addFilterFn(ctrl.currentField, ctrl.currentValue);
         ctrl.currentValue = undefined;
+        keyEvent.stopPropagation();
+        keyEvent.preventDefault();
       }
     }
 
@@ -11905,7 +11926,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
   * @description
   * Component for rendering a simple table view.<br><br>
   * See {@link patternfly.table.component:pfTableView%20-%20with%20Toolbar pfTableView - with Toolbar} for use with a Toolbar<br>
-  * See {@link patternfly.toolbars.componenet:pfToolbar pfToolbar} for use in Toolbar View Switcher
+  * See {@link patternfly.toolbars.component:pfToolbar pfToolbar} for use in Toolbar View Switcher
   *
   * @param {object} config Optional configuration object
   * <ul style='list-style-type: none'>
@@ -12244,7 +12265,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
  *
  * @description
  * Example configuring a table view with a toolbar.<br><br>
- * Please see {@link patternfly.toolbars.componenet:pfToolbar pfToolbar} for use in Toolbar View Switcher
+ * Please see {@link patternfly.toolbars.component:pfToolbar pfToolbar} for use in Toolbar View Switcher
  *
  * @param {object} config Optional configuration object
  * <ul style='list-style-type: none'>
@@ -12847,7 +12868,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
   templateUrl: 'table/tableview/table-view.html',
   controller: ["DTOptionsBuilder", "DTColumnDefBuilder", "$element", "pfUtils", "$log", "$filter", "$timeout", "$sce", function (DTOptionsBuilder, DTColumnDefBuilder, $element, pfUtils, $log, $filter, $timeout, $sce) {
     'use strict';
-    var ctrl = this, prevDtOptions, prevItems;
+    var ctrl = this, prevDtOptions, prevItems, prevPageConfig;
 
     // Once datatables is out of active development I'll remove log statements
     ctrl.debug = false;
@@ -12873,16 +12894,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
       showCheckboxes: true
     };
 
-    ctrl.$onInit = function () {
-
-      if (ctrl.debug) {
-        $log.debug("$onInit");
-      }
-
-      if (angular.isDefined(ctrl.colummns) && angular.isUndefined(ctrl.columns)) {
-        ctrl.columns = ctrl.colummns;
-      }
-
+    function setPagination () {
       if (angular.isUndefined(ctrl.dtOptions)) {
         ctrl.dtOptions = {};
       } else {
@@ -12892,16 +12904,16 @@ angular.module('patternfly.pagination').component('pfPagination', {
           if (angular.isUndefined(ctrl.pageConfig)) {
             ctrl.pageConfig = {};
           }
-          if (angular.isUndefined(ctrl.pageConfig.pageNumber)) {
+          if (!angular.isNumber(ctrl.pageConfig.pageNumber)) {
             ctrl.pageConfig.pageNumber = 1;
           }
         }
-        if (angular.isDefined(ctrl.dtOptions.displayLength)) {
+        if (angular.isNumber(ctrl.dtOptions.displayLength)) {
           ctrl.dtOptions.paging = true;
           if (angular.isUndefined(ctrl.pageConfig)) {
             ctrl.pageConfig = {};
           }
-          if (angular.isUndefined(ctrl.pageConfig.pageSize)) {
+          if (!angular.isNumber(ctrl.pageConfig.pageSize)) {
             ctrl.pageConfig.pageSize = ctrl.dtOptions.displayLength;
           }
         }
@@ -12925,6 +12937,17 @@ angular.module('patternfly.pagination').component('pfPagination', {
           ctrl.pageConfig.pageNumber = 1;
         }
       }
+    }
+
+    ctrl.$onInit = function () {
+
+      if (ctrl.debug) {
+        $log.debug("$onInit");
+      }
+
+      if (angular.isDefined(ctrl.colummns) && angular.isUndefined(ctrl.columns)) {
+        ctrl.columns = ctrl.colummns;
+      }
 
       if (angular.isUndefined(ctrl.config)) {
         ctrl.config = {};
@@ -12936,11 +12959,13 @@ angular.module('patternfly.pagination').component('pfPagination', {
     };
 
     ctrl.updateConfigOptions = function () {
-      var col, props = "";
+      var props = "";
 
       if (ctrl.debug) {
         $log.debug("  updateConfigOptions");
       }
+
+      setPagination();
 
       if (angular.isDefined(ctrl.dtOptions) && angular.isDefined(ctrl.dtOptions.displayLength)) {
         ctrl.dtOptions.displayLength = Number(ctrl.dtOptions.displayLength);
@@ -12949,6 +12974,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
       // Need to deep watch changes in dtOptions and items
       prevDtOptions = angular.copy(ctrl.dtOptions);
       prevItems = angular.copy(ctrl.items);
+      prevPageConfig = angular.copy(ctrl.pageConfig);
 
       // Setting bound variables to new variables loses it's one way binding
       //   ctrl.dtOptions = pfUtils.merge(ctrl.defaultDtOptions, ctrl.dtOptions);
@@ -12976,7 +13002,6 @@ angular.module('patternfly.pagination').component('pfPagination', {
     };
 
     ctrl.dtInstanceCallback = function (_dtInstance) {
-      var oTable, rows;
       if (ctrl.debug) {
         $log.debug("--> dtInstanceCallback");
       }
@@ -13021,7 +13046,8 @@ angular.module('patternfly.pagination').component('pfPagination', {
         $log.debug("$doCheck");
       }
       // do a deep compare on dtOptions and items
-      if (!angular.equals(ctrl.dtOptions, prevDtOptions)) {
+      if (!angular.equals(ctrl.dtOptions, prevDtOptions) ||
+          !angular.equals(ctrl.pageConfig, prevPageConfig)) {
         if (ctrl.debug) {
           $log.debug("  dtOptions !== prevDtOptions");
         }
@@ -13056,7 +13082,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
 
     function setColumnDefs () {
       var i = 0, actnBtns = 1;
-      var item, prop, offset;
+      var offset;
       ctrl.dtColumnDefs = [];
 
       // add checkbox col, not sortable
@@ -13201,7 +13227,6 @@ angular.module('patternfly.pagination').component('pfPagination', {
       //     returns ['Mary Jane', 'Fred Flinstone', 'Frank Livingston']
       //
       var i, rowData, visibleRows = new Array();
-      var oTable = ctrl.dtInstance.dataTable;
 
       var anNodes = document.querySelectorAll("#" + ctrl.tableId + "  tbody tr");
 
@@ -13288,7 +13313,8 @@ angular.module('patternfly.pagination').component('pfPagination', {
       });
     };
 
-    ctrl.checkDisabled = function (item) {
+    ctrl.checkDisabled = function () {
+      //TODO: implement checkDisabled
       return false;
     };
 
@@ -13315,7 +13341,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
 });
 ;/**
  * @ngdoc directive
- * @name patternfly.toolbars.componenet:pfToolbar
+ * @name patternfly.toolbars.component:pfToolbar
  * @restrict E
  *
  * @description
@@ -13395,8 +13421,9 @@ angular.module('patternfly.pagination').component('pfPagination', {
          </actions>
         </pf-toolbar>
       </div>
-      <div class="col-md-12" ng-if="viewType == 'listView'">
+      <div class="col-md-12" ng-if="viewType == 'listView' && showComponent">
         <pf-list-view config="listConfig"
+                      page-config="pageConfig"
                       items="items"
                       empty-state-config="emptyStateConfig">
           <div class="list-view-pf-description">
@@ -13417,8 +13444,9 @@ angular.module('patternfly.pagination').component('pfPagination', {
           </div>
         </pf-list-view>
       </div>
-      <div class="col-md-12" ng-if="viewType == 'cardView'">
+      <div class="col-md-12" ng-if="viewType == 'cardView' && showComponent">
         <pf-card-view config="listConfig"
+                      page-config="pageConfig"
                       items="items"
                       empty-state-config="emptyStateConfig">
           <div class="col-md-12">
@@ -13432,8 +13460,9 @@ angular.module('patternfly.pagination').component('pfPagination', {
           </div>
         </pf-card-view>
       </div>
-      <div class="col-md-12" ng-if="viewType == 'tableView'">
+      <div class="col-md-12" ng-if="viewType == 'tableView' && showComponent">
         <pf-table-view config="tableConfig"
+                       page-config="pageConfig"
                        columns="columns"
                        items="items"
                        empty-state-config="emptyStateConfig">
@@ -13444,6 +13473,9 @@ angular.module('patternfly.pagination').component('pfPagination', {
         <div class="form-group">
           <label class="checkbox-inline">
             <input type="checkbox" ng-model="listConfig.itemsAvailable" ng-change="updateItemsAvailable()">Items Available</input>
+          </label>
+          <label class="checkbox-inline">
+            <input type="checkbox" ng-model="showPagination" ng-change="togglePagination()">Show Pagination</input>
           </label>
         </div>
       </div>
@@ -13467,9 +13499,10 @@ angular.module('patternfly.pagination').component('pfPagination', {
   </file>
 
   <file name="script.js">
-  angular.module('patternfly.toolbars.demo').controller('ViewCtrl', ['$scope', 'pfViewUtils', '$filter',
-    function ($scope, pfViewUtils, $filter) {
+  angular.module('patternfly.toolbars.demo').controller('ViewCtrl', ['$scope', '$timeout', 'pfViewUtils', '$filter',
+    function ($scope, $timeout, pfViewUtils, $filter) {
       $scope.filtersText = '';
+      $scope.showPagination = false;
 
       $scope.columns = [
         { header: "Name", itemField: "name" },
@@ -13477,23 +13510,6 @@ angular.module('patternfly.pagination').component('pfPagination', {
         { header: "Address", itemField: "address" },
         { header: "BirthMonth", itemField: "birthMonth"}
       ];
-
-      // attempt to dyamically turn on/off pagination controls
-      // See: issues turning on/off pagination. see: https://datatables.net/manual/tech-notes/3
-
-      $scope.usePagination = true;
-      $scope.togglePagination = function () {
-        $scope.usePagination = !$scope.usePagination;
-        console.log("---> togglePagination: " + $scope.usePagination);
-        if($scope.usePagination) {
-          $scope.dtOptions.displayLength = 3;
-          $scope.dtOptions.dom = "tp";
-          console.log("---> use pagination: " + $scope.dtOptions.displayLength + ":" + $scope.dtOptions.dom);
-        } else {
-          $scope.dtOptions.displayLength = undefined;
-          $scope.dtOptions.dom = "t";
-        }
-      };
 
       $scope.allItems = [
         {
@@ -13543,6 +13559,30 @@ angular.module('patternfly.pagination').component('pfPagination', {
           age: 34,
           address: "21 Jump Street, Hollywood, California",
           birthMonth: 'March'
+        },
+        {
+          name: "Chris Thomas",
+          age: 21,
+          address: "50 Second Street, New York, New York",
+          birthMonth: 'April'
+        },
+        {
+          name: "Jeff McGovern",
+          age: 30,
+          address: "22 Oak Stree, Denver, Colorado",
+          birthMonth: 'November'
+        },
+        {
+          name: "Jessica Brown",
+          age: 50,
+          address: "72 Bourbon Way. Nashville. Tennessee",
+          birthMonth: 'January'
+        },
+        {
+          name: "Dave Nichols",
+          age: 32,
+          address: "21 Jump Street, Hollywood, California",
+          birthMonth: 'June'
         }
       ];
       $scope.items = $scope.allItems;
@@ -13822,6 +13862,24 @@ angular.module('patternfly.pagination').component('pfPagination', {
           $scope.toolbarConfig.filterConfig.selectedCount = selectedItems.length;
         }
       }
+
+      $scope.togglePagination = function () {
+        if ($scope.showPagination) {
+          $scope.pageConfig = {
+             pageSize: 5
+          }
+        } else {
+          delete $scope.pageConfig;
+        }
+        $scope.addNewComponentToDOM();
+      };
+
+      $scope.showComponent = true;
+
+      $scope.addNewComponentToDOM = function () {
+        $scope.showComponent = false;
+        $timeout(() => $scope.showComponent = true);
+      };
     }
   ]);
   </file>
@@ -13905,7 +13963,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
     }
 
     function enforceSingleSelect (filter) {
-      _.remove(ctrl.config.appliedFilters, {title: filter.title});
+      _.remove(ctrl.config.filterConfig.appliedFilters, {title: filter.title});
     }
 
     function addFilter (field, value) {
@@ -13915,7 +13973,7 @@ angular.module('patternfly.pagination').component('pfPagination', {
         value: value
       };
       if (!filterExists(newFilter)) {
-        if (newFilter.type === 'select') {
+        if (field.filterType === 'select') {
           enforceSingleSelect(newFilter);
         }
         ctrl.config.filterConfig.appliedFilters.push(newFilter);
@@ -14492,6 +14550,13 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
  * <li>.onDblClick             - ( function(item, event) ) Called to notify when an item is double clicked, default is none
  * <li>.itemsAvailable         - (boolean) If 'false', displays the {@link patternfly.views.component:pfEmptyState Empty State} component.
  * </ul>
+ * @param {object} pageConfig Optional pagination configuration object.  Since all properties are optional it is ok to specify: 'pageConfig = {}' to indicate that you want to
+ * use pagination with the default parameters.
+ * <ul style='list-style-type: none'>
+ *   <li>.pageNumber  - (number) Optional Initial page number to display. Default is page 1.
+ *   <li>.pageSize    - (number) Optional Initial page size/display length to use. Ie. Number of "Items per Page".  Default is 10 items per page
+ *   <li>.pageSizeIncrements - (Array[Number]) Optional Page size increments for the 'per page' dropdown.  If not specified, the default values are: [5, 10, 20, 40, 80, 100]
+ * </ul>
  * @param {object} emptyStateConfig Optional configuration settings for the empty state component.  See the {@link patternfly.views.component:pfEmptyState Empty State} component
  * @param {array} emptyStateActionButtons Optional buttons to display under the icon, title, and informational paragraph in the empty state component.  See the {@link patternfly.views.component:pfEmptyState Empty State} component
  * @param {Array} items the data to be shown in the cards<br/>
@@ -14511,7 +14576,12 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
    </style>
    <div ng-controller="ViewCtrl" class="row" style="display:inline-block; width: 100%;">
      <div class="col-md-12">
-       <pf-card-view id="exampleCardView" config="config" empty-state-config="emptyStateConfig" items="items" empty-state-action-buttons="emptyStateActionButtons">
+       <pf-card-view id="exampleCardView"
+           config="config"
+           page-config="pageConfig"
+           empty-state-config="emptyStateConfig"
+           items="items"
+           empty-state-action-buttons="emptyStateActionButtons">
          <div class="col-md-12">
            <span>{{item.name}}</span>
          </div>
@@ -14562,6 +14632,9 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
            <label class="checkbox-inline">
              <input type="checkbox" ng-model="config.itemsAvailable">Items Available</input>
            </label>
+           <label class="checkbox-inline">
+             <input type="checkbox" ng-model="showPagination" ng-change="togglePagination()">Show Pagination</input>
+           </label>
          </div>
        </form>
      </div>
@@ -14577,6 +14650,7 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
  <file name="script.js">
  angular.module('patternfly.views').controller('ViewCtrl', ['$scope',
  function ($scope) {
+        $scope.showPagination = false;
         $scope.eventText = '';
         var handleSelect = function (item, e) {
           $scope.eventText = item.name + ' selected\n' + $scope.eventText;
@@ -14593,6 +14667,15 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
         var handleCheckBoxChange = function (item, selected, e) {
           $scope.eventText = item.name + ' checked: ' + item.selected + '\n' + $scope.eventText;
         };
+        $scope.togglePagination = function () {
+          if ($scope.showPagination) {
+            $scope.pageConfig = {
+               pageSize: 5
+            }
+          } else {
+            delete $scope.pageConfig;
+          }
+        };
 
         var checkDisabledItem = function(item) {
           return $scope.showDisabled && (item.name === "John Smith");
@@ -14607,7 +14690,7 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
             $scope.config.selectItems = true;
             $scope.config.showSelectBox = false;
           } else {
-            $scope.config.selectItems = false
+            $scope.config.selectItems = false;
             $scope.config.showSelectBox = false;
           }
         };
@@ -14661,7 +14744,55 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
             city: "New York",
             state: "New York"
           },
-        ]
+          {
+            name: "Betty Rubble",
+            address: "30 Dinosaur Way",
+            city: "Bedrock",
+            state: "Washingstone"
+          },
+          {
+            name: "Martha Smith",
+            address: "415 East Main Street",
+            city: "Norfolk",
+            state: "Virginia"
+          },
+          {
+            name: "Liz Livingston",
+            address: "234 Elm Street",
+            city: "Pittsburgh",
+            state: "Pennsylvania"
+          },
+          {
+            name: "Howard McGovern",
+            address: "22 Oak Street",
+            city: "Denver",
+            state: "Colorado"
+          },
+          {
+            name: "Joyce Brown",
+            address: "72 Bourbon Way",
+            city: "Nashville",
+            state: "Tennessee"
+          },
+          {
+            name: "Mike Nichols",
+            address: "21 Jump Street",
+            city: "Hollywood",
+            state: "California"
+          },
+          {
+            name: "Mark Edwards",
+            address: "17 Cross Street",
+            city: "Boston",
+            state: "Massachusetts"
+          },
+          {
+            name: "Chris Thomas",
+            address: "50 Second Street",
+            city: "New York",
+            state: "New York"
+          }
+        ];
 
         var performEmptyStateAction = function (action) {
           $scope.eventText = action.name + "\r\n" + $scope.eventText;
@@ -14709,6 +14840,7 @@ angular.module('patternfly.validation', []).directive('pfValidation', ["$timeout
 angular.module('patternfly.views').component('pfCardView', {
   bindings: {
     config: '=?',
+    pageConfig: '=?',
     emptyStateConfig: '=?',
     emptyStateActionButtons: '=?',
     items: '=',
@@ -14719,6 +14851,8 @@ angular.module('patternfly.views').component('pfCardView', {
   controller: function () {
     'use strict';
     var ctrl = this;
+    var prevPageConfig, prevItems;
+
     ctrl.defaultConfig = {
       selectItems: false,
       multiSelect: false,
@@ -14731,7 +14865,8 @@ angular.module('patternfly.views').component('pfCardView', {
       onSelectionChange: null,
       onCheckBoxChange: null,
       onClick: null,
-      onDblClick: null
+      onDblClick: null,
+      itemsAvailable: true
     };
 
     ctrl.itemClick = function (e, item) {
@@ -14818,15 +14953,62 @@ angular.module('patternfly.views').component('pfCardView', {
       return ctrl.config.checkDisabled && ctrl.config.checkDisabled(item);
     };
 
+    function setPagination () {
+      if (angular.isUndefined(ctrl.pageConfig)) {
+        ctrl.pageConfig = {
+          pageNumber: 1,
+          pageSize: ctrl.items.length,
+          numTotalItems: ctrl.items.length,
+          showPaginationControls: false
+        };
+      } else {
+        if (angular.isUndefined(ctrl.pageConfig.showPaginationControls)) {
+          ctrl.pageConfig.showPaginationControls = true;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.pageNumber)) {
+          ctrl.pageConfig.pageNumber = 1;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.pageSize)) {
+          ctrl.pageConfig.pageSize = 10;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.numTotalItems)) {
+          ctrl.pageConfig.numTotalItems = ctrl.items.length;
+        }
+        // if not showing pagination, keep pageSize equal to numTotalItems
+        if (!ctrl.pageConfig.showPaginationControls) {
+          ctrl.pageConfig.pageSize = ctrl.pageConfig.numTotalItems;
+        }
+      }
+      prevPageConfig = angular.copy(ctrl.pageConfig);
+    }
+
     ctrl.$onInit = function () {
-      // Setting bound variables to new variables loses it's binding
-      //   ctrl.config = pfUtils.merge(ctrl.defaultConfig, ctrl.config);
-      // Instead, use _.defaults to update the existing variable
+
       _.defaults(ctrl.config, ctrl.defaultConfig);
+
       if (ctrl.config.selectItems && ctrl.config.showSelectBox) {
         throw new Error('pfCardView - ' +
           'Illegal use of pfCardView component! ' +
           'Cannot allow both select box and click selection in the same card view.');
+      }
+
+      prevItems = angular.copy(ctrl.items);
+      setPagination();
+    };
+
+
+    ctrl.$doCheck = function () {
+      if (!angular.equals(ctrl.pageConfig, prevPageConfig)) {
+        setPagination();
+      }
+      if (!angular.equals(ctrl.items, prevItems)) {
+        if (ctrl.items) {
+          ctrl.config.itemsAvailable = ctrl.items.length > 0;
+        }
+        if (angular.isDefined(ctrl.pageConfig)) {
+          ctrl.pageConfig.numTotalItems = ctrl.items.length;
+        }
+        prevItems = angular.copy(ctrl.items);
       }
     };
   }
@@ -15022,6 +15204,13 @@ angular.module('patternfly.views').component('pfEmptyState', {
  * <li>.onClick                - ( function(item, event) ) Called to notify when an item is clicked, default is none. Note: row expansion is the default behavior after onClick performed, but user can stop such default behavior by adding the sentence "return false;" to the end of onClick function body
  * <li>.onDblClick             - ( function(item, event) ) Called to notify when an item is double clicked, default is none
  * </ul>
+ * @param {object} pageConfig Optional pagination configuration object.  Since all properties are optional it is ok to specify: 'pageConfig = {}' to indicate that you want to
+ * use pagination with the default parameters.
+ * <ul style='list-style-type: none'>
+ *   <li>.pageNumber  - (number) Optional Initial page number to display. Default is page 1.
+ *   <li>.pageSize    - (number) Optional Initial page size/display length to use. Ie. Number of "Items per Page".  Default is 10 items per page
+ *   <li>.pageSizeIncrements - (Array[Number]) Optional Page size increments for the 'per page' dropdown.  If not specified, the default values are: [5, 10, 20, 40, 80, 100]
+ * </ul>
  * @param {array} actionButtons List of action buttons in each row
  *   <ul style='list-style-type: none'>
  *     <li>.name - (String) The name of the action, displayed on the button
@@ -15054,9 +15243,11 @@ angular.module('patternfly.views').component('pfEmptyState', {
        <ul class="nav nav-tabs">
          <li ng-class="{'active': viewType === 'basic'}"><a href="#" ng-click="setView('basic')">Basic (w/ Options)</a></li>
          <li ng-class="{'active': viewType === 'compound'}"><a href="#" ng-click="setView('compound')">Compound Expansion</a></li>
+         <li ng-class="{'active': viewType === 'pagination'}"><a href="#" ng-click="setView('pagination')">Pagination</a></li>
        </ul>
        <div ng-if="viewType === 'basic'" ng-include="'basic.html'"></div>
        <div ng-if="viewType === 'compound'" ng-include="'compound.html'"></div>
+       <div ng-if="viewType === 'pagination'" ng-include="'pagination.html'"></div>
      </div>
   </file>
   <file name="view.js">
@@ -15269,7 +15460,7 @@ angular.module('patternfly.views').component('pfEmptyState', {
             $scope.config.selectItems = true;
             $scope.config.showSelectBox = false;
           } else {
-            $scope.config.selectItems = false
+            $scope.config.selectItems = false;
             $scope.config.showSelectBox = false;
           }
         };
@@ -15385,7 +15576,7 @@ angular.module('patternfly.views').component('pfEmptyState', {
             address: "50 Second Street",
             city: "New York",
             state: "New York"
-          },
+          }
         ];
 
         $scope.getMenuClass = function (item) {
@@ -15649,7 +15840,7 @@ angular.module('patternfly.views').component('pfEmptyState', {
             clusterCount: 6,
             nodeCount: 10,
             imageCount: 8
-          },
+          }
         ];
 
         $scope.getMenuClass = function (item) {
@@ -15728,7 +15919,7 @@ angular.module('patternfly.views').component('pfEmptyState', {
   <file name="itemExpansion.js">
     angular.module('patternfly.views').component('itemExpansion', {
       bindings: {
-        item: '<',
+        item: '<'
       },
       templateUrl: 'itemExpansion.html',
       controller: function () {
@@ -15743,11 +15934,221 @@ angular.module('patternfly.views').component('pfEmptyState', {
    <div ng-if="$ctrl.item.expandField === 'nodes'" ng-include="'views/listview/examples/nodes-content.html'"></div>
    <div ng-if="$ctrl.item.expandField === 'images'" ng-include="'views/listview/examples/images-content.html'"></div>
  </file>
+
+ <file name="pagination.html">
+   <div ng-controller="PaginationCtrl" class="row example-container">
+     <div class="col-md-12 list-view-container example-list-view">
+       <pf-list-view id="paginationListView"
+         items="items"
+         page-config="pageConfig"
+         action-buttons="actionButtons"
+         menu-actions="menuActions">
+         <div class="list-view-pf-description">
+           <div class="list-group-item-heading">
+             {{item.name}}
+           </div>
+           <div class="list-group-item-text">
+             {{item.address}}
+           </div>
+         </div>
+         <div class="list-view-pf-additional-info">
+           <div class="list-view-pf-additional-info-item">
+             {{item.city}}
+           </div>
+           <div class="list-view-pf-additional-info-item">
+             {{item.state}}
+           </div>
+         </div>
+       </pf-list-view>
+     </div>
+   </div>
+ </file>
+
+ <file name="pagination.js">
+   angular.module('patternfly.views').controller('PaginationCtrl', ['$scope', '$templateCache',
+     function ($scope, $templateCache) {
+
+        $scope.pageConfig = {
+          pageSize: 5
+        };
+
+        var startServer = function (action, item) {
+          console.log(item.name + " : " + action.name);
+        };
+
+        var performAction = function (action, item) {
+          console.log(item.name + " : " + action.name);
+        };
+
+        $scope.items = [
+          {
+            name: "Fred Flintstone",
+            address: "20 Dinosaur Way",
+            city: "Bedrock",
+            state: "Washingstone"
+          },
+          {
+            name: "John Smith",
+            address: "415 East Main Street",
+            city: "Norfolk",
+            state: "Virginia"
+          },
+          {
+            name: "Frank Livingston",
+            address: "234 Elm Street",
+            city: "Pittsburgh",
+            state: "Pennsylvania"
+          },
+          {
+            name: "Linda McGovern",
+            address: "22 Oak Street",
+            city: "Denver",
+            state: "Colorado"
+          },
+          {
+            name: "Jim Brown",
+            address: "72 Bourbon Way",
+            city: "Nashville",
+            state: "Tennessee"
+          },
+          {
+            name: "Holly Nichols",
+            address: "21 Jump Street",
+            city: "Hollywood",
+            state: "California"
+          },
+          {
+            name: "Marie Edwards",
+            address: "17 Cross Street",
+            city: "Boston",
+            state: "Massachusetts"
+          },
+          {
+            name: "Pat Thomas",
+            address: "50 Second Street",
+            city: "New York",
+            state: "New York"
+          },
+          {
+            name: "Betty Rubble",
+            address: "30 Dinosaur Way",
+            city: "Bedrock",
+            state: "Washingstone"
+          },
+          {
+            name: "Martha Smith",
+            address: "415 East Main Street",
+            city: "Norfolk",
+            state: "Virginia",
+          },
+          {
+            name: "Liz Livingston",
+            address: "234 Elm Street",
+            city: "Pittsburgh",
+            state: "Pennsylvania"
+          },
+          {
+            name: "Howard McGovern",
+            address: "22 Oak Street",
+            city: "Denver",
+            state: "Colorado"
+          },
+          {
+            name: "Joyce Brown",
+            address: "72 Bourbon Way",
+            city: "Nashville",
+            state: "Tennessee"
+          },
+          {
+            name: "Mike Nichols",
+            address: "21 Jump Street",
+            city: "Hollywood",
+            state: "California"
+          },
+          {
+            name: "Mark Edwards",
+            address: "17 Cross Street",
+            city: "Boston",
+            state: "Massachusetts"
+          },
+          {
+            name: "Chris Thomas",
+            address: "50 Second Street",
+            city: "New York",
+            state: "New York"
+          }
+        ];
+
+        $scope.actionButtons = [
+          {
+            name: 'Start',
+            class: 'btn-primary',
+            include: 'start-button-template',
+            title: 'Start the server',
+            actionFn: startServer
+          },
+          {
+            name: 'Action 1',
+            title: 'Perform an action',
+            actionFn: performAction
+          },
+          {
+            name: 'Action 2',
+            title: 'Do something else',
+            actionFn: performAction
+          },
+          {
+            name: 'Action 3',
+            include: 'my-button-template',
+            title: 'Do something special',
+            actionFn: performAction
+          }
+        ];
+        $scope.menuActions = [
+          {
+            name: 'Action',
+            title: 'Perform an action',
+            actionFn: performAction
+          },
+          {
+            name: 'Another Action',
+            title: 'Do something else',
+            actionFn: performAction
+          },
+          {
+            name: 'Disabled Action',
+            title: 'Unavailable action',
+            actionFn: performAction,
+            isDisabled: true
+          },
+          {
+            name: 'Something Else',
+            title: '',
+            actionFn: performAction
+          },
+          {
+            isSeparator: true
+          },
+          {
+            name: 'Grouped Action 1',
+            title: 'Do something',
+            actionFn: performAction
+          },
+          {
+            name: 'Grouped Action 2',
+            title: 'Do something similar',
+            actionFn: performAction
+          }
+        ];
+      }
+   ]);
+ </file>
  </example>
  */
 ;angular.module('patternfly.views').component('pfListView', {
   bindings: {
     config: '=?',
+    pageConfig: '=?',
     items: '=',
     actionButtons: '=?',
     enableButtonForItemFn: '=?',
@@ -15768,6 +16169,7 @@ angular.module('patternfly.views').component('pfEmptyState', {
   controller: ["$window", "$element", function ($window, $element) {
     'use strict';
     var ctrl = this;
+    var prevPageConfig, prevItems;
 
     var setDropMenuLocation = function (parentDiv) {
       var dropButton = parentDiv.querySelector('.dropdown-toggle');
@@ -15802,7 +16204,8 @@ angular.module('patternfly.views').component('pfEmptyState', {
       onSelectionChange: null,
       onCheckBoxChange: null,
       onClick: null,
-      onDblClick: null
+      onDblClick: null,
+      itemsAvailable: true
     };
 
 
@@ -15976,11 +16379,42 @@ angular.module('patternfly.views').component('pfEmptyState', {
       return ctrl.config.checkDisabled && ctrl.config.checkDisabled(item);
     };
 
+    function setPagination () {
+      if (angular.isUndefined(ctrl.pageConfig)) {
+        ctrl.pageConfig = {
+          pageNumber: 1,
+          pageSize: ctrl.items.length,
+          numTotalItems: ctrl.items.length,
+          showPaginationControls: false
+        };
+      } else {
+        if (angular.isUndefined(ctrl.pageConfig.showPaginationControls)) {
+          ctrl.pageConfig.showPaginationControls = true;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.pageNumber)) {
+          ctrl.pageConfig.pageNumber = 1;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.pageSize)) {
+          ctrl.pageConfig.pageSize = 10;
+        }
+        if (!angular.isNumber(ctrl.pageConfig.numTotalItems)) {
+          ctrl.pageConfig.numTotalItems = ctrl.items.length;
+        }
+        // if not showing pagination, keep pageSize equal to numTotalItems
+        if (!ctrl.pageConfig.showPaginationControls) {
+          ctrl.pageConfig.pageSize = ctrl.pageConfig.numTotalItems;
+        }
+      }
+      prevPageConfig = angular.copy(ctrl.pageConfig);
+    }
+
     ctrl.$onInit = function () {
-      // Setting bound variables to new variables loses it's binding
-      //   ctrl.config = pfUtils.merge(ctrl.defaultConfig, ctrl.config);
-      // Instead, use _.defaults to update the existing variable
+      if (angular.isUndefined(ctrl.config)) {
+        ctrl.config = {};
+      }
+
       _.defaults(ctrl.config, ctrl.defaultConfig);
+
       if (!ctrl.config.selectItems) {
         ctrl.config.selectedItems = [];
       }
@@ -15991,6 +16425,23 @@ angular.module('patternfly.views').component('pfEmptyState', {
         throw new Error('pfListView - ' +
           'Illegal use of pListView component! ' +
           'Cannot allow both select box and click selection in the same list view.');
+      }
+      prevItems = angular.copy(ctrl.items);
+      setPagination();
+    };
+
+    ctrl.$doCheck = function () {
+      if (!angular.equals(ctrl.pageConfig, prevPageConfig)) {
+        setPagination();
+      }
+      if (!angular.equals(ctrl.items, prevItems)) {
+        if (ctrl.items) {
+          ctrl.config.itemsAvailable = ctrl.items.length > 0;
+        }
+        if (angular.isDefined(ctrl.pageConfig)) {
+          ctrl.pageConfig.numTotalItems = ctrl.items.length;
+        }
+        prevItems = angular.copy(ctrl.items);
       }
     };
 
@@ -16257,7 +16708,7 @@ angular.module('patternfly.wizard').component('pfWizardReviewPage', {
  * @param {boolean=} prevEnabled Sets whether the back button should be enabled when this step is first displayed
  * @param {string=} nextTooltip The text to display as a tooltip on the next button
  * @param {string=} prevTooltip The text to display as a tooltip on the back button
- * @param {boolean=} wzDisabled Disables the wizard when this page is shown
+ * @param {boolean=} wzDisabled Hides the step when set to True
  * @param {boolean} okToNavAway Sets whether or not it's ok for the user to leave this page
  * @param {boolean} allowClickNav Sets whether the user can click on the numeric step indicators to navigate directly to this step
  * @param {string=} description The step description (optional)
@@ -16576,7 +17027,7 @@ angular.module('patternfly.wizard').component('pfWizardStep', {
 * @param {number} stepPriority  This sets the priority of this wizard step relative to other wizard steps.  They should be numbered sequentially in the order they should be viewed.
 * @param {boolean=} nextEnabled Sets whether the next button should be enabled when this step is first displayed
 * @param {boolean=} prevEnabled Sets whether the back button should be enabled when this step is first displayed
-* @param {boolean=} wzDisabled Disables the wizard when this page is shown
+* @param {boolean=} wzDisabled Hides the step when set to True
 * @param {boolean} okToNavAway Sets whether or not it's ok for the user to leave this page
 * @param {boolean=} allowClickNav Sets whether the user can click on the numeric step indicators to navigate directly to this step
 * @param {string=} description The step description
@@ -17483,12 +17934,12 @@ angular.module('patternfly.wizard').component('pfWizard', {
 
 
   $templateCache.put('filters/simple-filter/filter-fields.html',
-    "<div class=\"filter-pf filter-fields\"><div class=\"input-group form-group\"><div uib-dropdown class=input-group-btn><button uib-dropdown-toggle type=button class=\"btn btn-default filter-fields\" uib-tooltip=\"Filter by\" tooltip-placement=top tooltip-append-to-body=true>{{$ctrl.currentField.title}} <span class=caret></span></button><ul uib-dropdown-menu><li ng-repeat=\"item in $ctrl.config.fields\"><a class=filter-field role=menuitem tabindex=-1 ng-click=$ctrl.selectField(item)>{{item.title}}</a></li></ul></div><div ng-if=\"$ctrl.currentField.filterType !== 'select' && $ctrl.currentField.filterType !== 'complex-select'\"><input class=form-control type={{$ctrl.currentField.filterType}} ng-model=$ctrl.currentValue placeholder={{$ctrl.currentField.placeholder}} ng-keypress=\"$ctrl.onValueKeyPress($event)\"></div><div ng-if=\"$ctrl.currentField.filterType === 'select'\"><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle\"><span class=\"filter-option pull-left\">{{$ctrl.currentValue || $ctrl.currentField.placeholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.placeholder}}</a></li><li ng-repeat=\"filterValue in $ctrl.currentField.filterValues\" ng-class=\"{'selected': filterValue === $ctrl.currentValue}\"><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue(filterValue)>{{filterValue}}</a></li></ul></div></div><div ng-if=\"$ctrl.currentField.filterType === 'complex-select'\" class=category-select><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle\"><span class=\"filter-option pull-left\">{{$ctrl.filterCategory || $ctrl.currentField.placeholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.placeholder}}</a></li><li ng-repeat=\"filterCategory in $ctrl.currentField.filterValues\" ng-class=\"{'selected': filterCategory === $ctrl.filterCategory}\"><a role=menuitem tabindex=-1 ng-click=\"$ctrl.selectValue(filterCategory, 'filter-category')\">{{filterCategory}}</a></li></ul></div><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle category-select-value\"><span class=\"filter-option pull-left\">{{$ctrl.filterValue || $ctrl.currentField.filterCategoriesPlaceholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.filterCategoriesPlaceholder}}</a></li><li ng-repeat=\"filterValue in $ctrl.currentField.filterCategories[$ctrl.filterCategory.toLowerCase()].filterValues\" ng-class=\"{'selected': filterValue === $ctrl.filterValue}\"><a role=menuitem tabindex=-1 ng-click=\"$ctrl.selectValue(filterValue, 'filter-value')\">{{filterValue}}</a></li></ul></div></div></div></div>"
+    "<div class=\"filter-pf filter-fields\"><div class=\"input-group form-group\"><div uib-dropdown class=input-group-btn><button uib-dropdown-toggle type=button class=\"btn btn-default filter-fields\" uib-tooltip=\"Filter by\" tooltip-placement=top tooltip-append-to-body=true>{{$ctrl.currentField.title}} <span class=caret></span></button><ul uib-dropdown-menu><li ng-repeat=\"item in $ctrl.config.fields\" ng-class=\"{'selected': item === $ctrl.currentField}\"><a class=filter-field role=menuitem tabindex=-1 ng-click=$ctrl.selectField(item)>{{item.title}}</a></li></ul></div><div ng-if=\"$ctrl.currentField.filterType !== 'select' && $ctrl.currentField.filterType !== 'complex-select'\"><input class=form-control type={{$ctrl.currentField.filterType}} ng-model=$ctrl.currentValue placeholder={{$ctrl.currentField.placeholder}} ng-keypress=\"$ctrl.onValueKeyPress($event)\"></div><div ng-if=\"$ctrl.currentField.filterType === 'select'\"><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle\"><span class=\"filter-option pull-left\">{{$ctrl.currentValue.title || $ctrl.currentValue || $ctrl.currentField.placeholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.placeholder}}</a></li><li ng-repeat=\"filterValue in $ctrl.currentField.filterValues\" ng-class=\"{'selected': (filterValue === $ctrl.currentValue)}\"><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue(filterValue)>{{filterValue.title || filterValue}}</a></li></ul></div></div><div ng-if=\"$ctrl.currentField.filterType === 'complex-select'\" class=category-select><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle\"><span class=\"filter-option pull-left\">{{$ctrl.filterCategory.title || $ctrl.filterCategory || $ctrl.currentField.placeholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.placeholder}}</a></li><li ng-repeat=\"filterCategory in $ctrl.currentField.filterValues\" ng-class=\"{'selected': (filterCategory == $ctrl.filterCategory)}\"><a role=menuitem tabindex=-1 ng-click=\"$ctrl.selectValue(filterCategory, 'filter-category')\">{{filterCategory.title ||filterCategory}}</a></li></ul></div><div class=\"btn-group bootstrap-select form-control filter-select\" uib-dropdown><button type=button uib-dropdown-toggle class=\"btn btn-default dropdown-toggle category-select-value\"><span class=\"filter-option pull-left\">{{$ctrl.filterValue.title || $ctrl.filterValue || $ctrl.currentField.filterCategoriesPlaceholder}}</span> <span class=caret></span></button><ul uib-dropdown-menu class=dropdown-menu-right role=menu><li ng-if=$ctrl.currentField.placeholder><a role=menuitem tabindex=-1 ng-click=$ctrl.selectValue()>{{$ctrl.currentField.filterCategoriesPlaceholder}}</a></li><li ng-repeat=\"filterValue in $ctrl.currentField.filterCategories[$ctrl.filterCategory.id.toLowerCase() || $ctrl.filterCategory.toLowerCase() ].filterValues\" ng-class=\"{'selected': filterValue === $ctrl.filterValue}\"><a role=menuitem tabindex=-1 ng-click=\"$ctrl.selectValue(filterValue, 'filter-value')\">{{filterValue.title || filterValue}}</a></li></ul></div></div></div></div>"
   );
 
 
   $templateCache.put('filters/simple-filter/filter-results.html',
-    "<div class=filter-pf><div class=\"row toolbar-pf-results\"><div class=col-sm-12><h5>{{$ctrl.config.resultsCount}} Results</h5><p ng-if=\"$ctrl.config.appliedFilters.length > 0\">Active filters:</p><ul class=list-inline><li ng-repeat=\"filter in $ctrl.config.appliedFilters\"><span class=\"active-filter label label-info\">{{filter.title}}: {{filter.value}} <a><span class=\"pficon pficon-close\" ng-click=$ctrl.clearFilter(filter)></span></a></span></li></ul><p><a class=clear-filters ng-click=$ctrl.clearAllFilters() ng-if=\"$ctrl.config.appliedFilters.length > 0\">Clear All Filters</a></p><div ng-if=\"$ctrl.config.selectedCount !== undefined && $ctrl.config.totalCount !== undefined\" class=pf-table-view-selected-label><strong>{{$ctrl.config.selectedCount}}</strong> of <strong>{{$ctrl.config.totalCount}}</strong> selected</div></div><!-- /col --></div><!-- /row --></div>"
+    "<div class=filter-pf><div class=\"row toolbar-pf-results\"><div class=col-sm-12><h5>{{$ctrl.config.resultsCount}} Results</h5><p ng-if=\"$ctrl.config.appliedFilters.length > 0\">Active filters:</p><ul class=list-inline><li ng-repeat=\"filter in $ctrl.config.appliedFilters\"><span class=\"active-filter label label-info\">{{filter.title}}: {{((filter.value.filterCategory.title || filter.value.filterCategory) + filter.value.filterDelimiter + (filter.value.filterValue.title || filter.value.filterValue)) || filter.value.title || filter.value}} <a><span class=\"pficon pficon-close\" ng-click=$ctrl.clearFilter(filter)></span></a></span></li></ul><p><a class=clear-filters ng-click=$ctrl.clearAllFilters() ng-if=\"$ctrl.config.appliedFilters.length > 0\">Clear All Filters</a></p><div ng-if=\"$ctrl.config.selectedCount !== undefined && $ctrl.config.totalCount !== undefined\" class=pf-table-view-selected-label><strong>{{$ctrl.config.selectedCount}}</strong> of <strong>{{$ctrl.config.totalCount}}</strong> selected</div></div><!-- /col --></div><!-- /row --></div>"
   );
 
 
@@ -17647,7 +18098,7 @@ angular.module('patternfly.wizard').component('pfWizard', {
   'use strict';
 
   $templateCache.put('views/cardview/card-view.html',
-    "<span><div ng-if=\"$ctrl.config.itemsAvailable !== false\" class=card-view-pf><div class=card ng-repeat=\"item in $ctrl.items\" ng-class=\"{'pf-selectable': $ctrl.selectItems, 'active': $ctrl.isSelected(item), 'disabled': $ctrl.checkDisabled(item)}\"><div class=card-content ng-click=\"$ctrl.itemClick($event, item)\" ng-dblclick=\"$ctrl.dblClick($event, item)\"><div pf-transclude=parent></div></div><div class=card-check-box ng-if=$ctrl.config.showSelectBox><input type=checkbox value=item.selected ng-model=item.selected ng-disabled=$ctrl.checkDisabled(item) ng-change=\"$ctrl.checkBoxChange(item)\"></div></div></div><pf-empty-state ng-if=\"$ctrl.config.itemsAvailable === false\" config=$ctrl.emptyStateConfig action-buttons=$ctrl.emptyStateActionButtons></pf-empty-state></span>"
+    "<span><div ng-if=\"$ctrl.config.itemsAvailable !== false\" class=card-view-pf><div class=card ng-repeat=\"item in $ctrl.items | startFrom:($ctrl.pageConfig.pageNumber - 1)*$ctrl.pageConfig.pageSize | limitTo:$ctrl.pageConfig.pageSize\" ng-class=\"{'pf-selectable': $ctrl.selectItems, 'active': $ctrl.isSelected(item), 'disabled': $ctrl.checkDisabled(item)}\"><div class=card-content ng-click=\"$ctrl.itemClick($event, item)\" ng-dblclick=\"$ctrl.dblClick($event, item)\"><div pf-transclude=parent></div></div><div class=card-check-box ng-if=$ctrl.config.showSelectBox><input type=checkbox value=item.selected ng-model=item.selected ng-disabled=$ctrl.checkDisabled(item) ng-change=\"$ctrl.checkBoxChange(item)\"></div></div></div><pf-pagination ng-if=\"$ctrl.pageConfig.showPaginationControls && $ctrl.config.itemsAvailable === true\" page-size=$ctrl.pageConfig.pageSize page-size-increments=$ctrl.pageConfig.pageSizeIncrements page-number=$ctrl.pageConfig.pageNumber num-total-items=$ctrl.pageConfig.numTotalItems></pf-pagination><pf-empty-state ng-if=\"$ctrl.config.itemsAvailable === false\" config=$ctrl.emptyStateConfig action-buttons=$ctrl.emptyStateActionButtons></pf-empty-state></span>"
   );
 
 
@@ -17677,7 +18128,7 @@ angular.module('patternfly.wizard').component('pfWizard', {
 
 
   $templateCache.put('views/listview/list-view.html',
-    "<span><div class=\"list-group list-view-pf list-view-pf-view\" dnd-list=$ctrl.items ng-class=\"{'list-view-pf-dnd': $ctrl.config.dragEnabled === true}\" ng-if=\"$ctrl.config.itemsAvailable !== false\"><div class=dndPlaceholder></div><div class=\"list-group-item {{item.rowClass}}\" ng-repeat=\"item in $ctrl.items track by $index\" dnd-draggable=item dnd-effect-allowed=move dnd-disable-if=\"$ctrl.config.dragEnabled !== true\" dnd-dragstart=$ctrl.dragStart(item) dnd-moved=$ctrl.dragMoved() dnd-dragend=$ctrl.dragEnd() ng-class=\"{'drag-original': $ctrl.isDragOriginal(item), 'pf-selectable': $ctrl.selectItems, 'active': $ctrl.isSelected(item), 'disabled': $ctrl.checkDisabled(item), 'list-view-pf-expand-active': item.isExpanded}\"><div class=list-group-item-header ng-class=\"{'list-group-item-not-selectable' : !$ctrl.config.selectItems && (!$ctrl.config.useExpandingRows || $ctrl.config.compoundExpansionOnly)}\"><div class=list-view-pf-dnd-drag-items ng-if=\"$ctrl.config.dragEnabled === true\"><div pf-transclude=parent class=list-view-pf-main-info></div></div><div ng-class=\"{'list-view-pf-dnd-original-items': $ctrl.config.dragEnabled === true}\"><div class=list-view-pf-expand ng-if=\"$ctrl.config.useExpandingRows && !$ctrl.config.compoundExpansionOnly\"><span class=\"fa fa-angle-right\" ng-show=!item.disableRowExpansion ng-click=$ctrl.toggleItemExpansion(item) ng-class=\"{'fa-angle-down': item.isExpanded}\"></span> <span class=pf-expand-placeholder ng-show=item.disableRowExpansion></span></div><div class=list-view-pf-checkbox ng-if=$ctrl.config.showSelectBox><input type=checkbox value=item.selected ng-model=item.selected ng-disabled=$ctrl.checkDisabled(item) ng-change=\"$ctrl.checkBoxChange(item)\"></div><div class=list-view-pf-actions ng-if=\"($ctrl.actionButtons && $ctrl.actionButtons.length > 0) || ($ctrl.menuActions && $ctrl.menuActions.length > 0)\"><button class=\"btn {{actionButton.class || 'btn-default'}}\" ng-repeat=\"actionButton in $ctrl.actionButtons\" title={{actionButton.title}} ng-class=\"{'disabled' : $ctrl.checkDisabled(item) || !$ctrl.enableButtonForItem(actionButton, item)}\" ng-click=\"$ctrl.handleButtonAction(actionButton, item)\"><div ng-if=actionButton.include class=actionButton.includeClass ng-include src=actionButton.include></div><span ng-if=!actionButton.include>{{actionButton.name}}</span></button><div uib-dropdown class=\"{{$ctrl.dropdownClass}} pull-right dropdown-kebab-pf {{$ctrl.getMenuClassForItem(item)}} {{$ctrl.hideMenuForItem(item) ? 'invisible' : ''}}\" id=kebab_{{$index}} ng-if=\"$ctrl.menuActions && $ctrl.menuActions.length > 0\"><button uib-dropdown-toggle class=\"btn btn-link\" type=button id=dropdownKebabRight_{{$index}} ng-class=\"{'disabled': $ctrl.checkDisabled(item)}\" ng-click=\"$ctrl.setupActions(item, $event)\"><span class=\"fa fa-ellipsis-v\"></span></button><ul uib-dropdown-menu class=\"dropdown-menu dropdown-menu-right {{$index}}\" aria-labelledby=dropdownKebabRight_{{$index}}><li ng-repeat=\"menuAction in $ctrl.menuActions\" ng-if=\"menuAction.isVisible !== false\" role=\"{{menuAction.isSeparator === true ? 'separator' : 'menuitem'}}\" ng-class=\"{'divider': (menuAction.isSeparator === true), 'disabled': (menuAction.isDisabled === true)}\"><a ng-if=\"menuAction.isSeparator !== true\" title={{menuAction.title}} ng-click=\"$ctrl.handleMenuAction(menuAction, item)\">{{menuAction.name}}</a></li></ul></div></div><div pf-transclude=parent class=list-view-pf-main-info ng-click=\"$ctrl.itemClick($event, item)\" ng-dblclick=\"$ctrl.dblClick($event, item)\"></div></div><div class=\"list-group-item-container container-fluid\" ng-transclude=expandedContent ng-if=\"$ctrl.config.useExpandingRows && item.isExpanded\"></div></div></div></div><pf-empty-state ng-if=\"$ctrl.config.itemsAvailable === false\" config=$ctrl.emptyStateConfig action-buttons=$ctrl.emptyStateActionButtons></pf-empty-state></span>"
+    "<span><div class=\"list-group list-view-pf list-view-pf-view\" dnd-list=$ctrl.items ng-class=\"{'list-view-pf-dnd': $ctrl.config.dragEnabled === true}\" ng-if=\"$ctrl.config.itemsAvailable !== false\"><div class=dndPlaceholder></div><div class=\"list-group-item {{item.rowClass}}\" ng-repeat=\"item in $ctrl.items | startFrom:($ctrl.pageConfig.pageNumber - 1)*$ctrl.pageConfig.pageSize | limitTo:$ctrl.pageConfig.pageSize track by $index\" dnd-draggable=item dnd-effect-allowed=move dnd-disable-if=\"$ctrl.config.dragEnabled !== true\" dnd-dragstart=$ctrl.dragStart(item) dnd-moved=$ctrl.dragMoved() dnd-dragend=$ctrl.dragEnd() ng-class=\"{'drag-original': $ctrl.isDragOriginal(item), 'pf-selectable': $ctrl.selectItems, 'active': $ctrl.isSelected(item), 'disabled': $ctrl.checkDisabled(item), 'list-view-pf-expand-active': item.isExpanded}\"><div class=list-group-item-header ng-class=\"{'list-group-item-not-selectable' : !$ctrl.config.selectItems && (!$ctrl.config.useExpandingRows || $ctrl.config.compoundExpansionOnly)}\"><div class=list-view-pf-dnd-drag-items ng-if=\"$ctrl.config.dragEnabled === true\"><div pf-transclude=parent class=list-view-pf-main-info></div></div><div ng-class=\"{'list-view-pf-dnd-original-items': $ctrl.config.dragEnabled === true}\"><div class=list-view-pf-expand ng-if=\"$ctrl.config.useExpandingRows && !$ctrl.config.compoundExpansionOnly\"><span class=\"fa fa-angle-right\" ng-show=!item.disableRowExpansion ng-click=$ctrl.toggleItemExpansion(item) ng-class=\"{'fa-angle-down': item.isExpanded}\"></span> <span class=pf-expand-placeholder ng-show=item.disableRowExpansion></span></div><div class=list-view-pf-checkbox ng-if=$ctrl.config.showSelectBox><input type=checkbox value=item.selected ng-model=item.selected ng-disabled=$ctrl.checkDisabled(item) ng-change=\"$ctrl.checkBoxChange(item)\"></div><div class=list-view-pf-actions ng-if=\"($ctrl.actionButtons && $ctrl.actionButtons.length > 0) || ($ctrl.menuActions && $ctrl.menuActions.length > 0)\"><button class=\"btn {{actionButton.class || 'btn-default'}}\" ng-repeat=\"actionButton in $ctrl.actionButtons\" title={{actionButton.title}} ng-class=\"{'disabled' : $ctrl.checkDisabled(item) || !$ctrl.enableButtonForItem(actionButton, item)}\" ng-click=\"$ctrl.handleButtonAction(actionButton, item)\"><div ng-if=actionButton.include class=actionButton.includeClass ng-include src=actionButton.include></div><span ng-if=!actionButton.include>{{actionButton.name}}</span></button><div uib-dropdown class=\"{{$ctrl.dropdownClass}} pull-right dropdown-kebab-pf {{$ctrl.getMenuClassForItem(item)}} {{$ctrl.hideMenuForItem(item) ? 'invisible' : ''}}\" id=kebab_{{$index}} ng-if=\"$ctrl.menuActions && $ctrl.menuActions.length > 0\"><button uib-dropdown-toggle class=\"btn btn-link\" type=button id=dropdownKebabRight_{{$index}} ng-class=\"{'disabled': $ctrl.checkDisabled(item)}\" ng-click=\"$ctrl.setupActions(item, $event)\"><span class=\"fa fa-ellipsis-v\"></span></button><ul uib-dropdown-menu class=\"dropdown-menu dropdown-menu-right {{$index}}\" aria-labelledby=dropdownKebabRight_{{$index}}><li ng-repeat=\"menuAction in $ctrl.menuActions\" ng-if=\"menuAction.isVisible !== false\" role=\"{{menuAction.isSeparator === true ? 'separator' : 'menuitem'}}\" ng-class=\"{'divider': (menuAction.isSeparator === true), 'disabled': (menuAction.isDisabled === true)}\"><a ng-if=\"menuAction.isSeparator !== true\" title={{menuAction.title}} ng-click=\"$ctrl.handleMenuAction(menuAction, item)\">{{menuAction.name}}</a></li></ul></div></div><div pf-transclude=parent class=list-view-pf-main-info ng-click=\"$ctrl.itemClick($event, item)\" ng-dblclick=\"$ctrl.dblClick($event, item)\"></div></div><div class=\"list-group-item-container container-fluid\" ng-transclude=expandedContent ng-if=\"$ctrl.config.useExpandingRows && item.isExpanded\"></div></div></div><pf-pagination ng-if=\"$ctrl.pageConfig.showPaginationControls && $ctrl.config.itemsAvailable === true\" page-size=$ctrl.pageConfig.pageSize page-size-increments=$ctrl.pageConfig.pageSizeIncrements page-number=$ctrl.pageConfig.pageNumber num-total-items=$ctrl.pageConfig.numTotalItems></pf-pagination></div><pf-empty-state ng-if=\"$ctrl.config.itemsAvailable === false\" config=$ctrl.emptyStateConfig action-buttons=$ctrl.emptyStateActionButtons></pf-empty-state></span>"
   );
 
 }]);

@@ -14,7 +14,7 @@
  * <li>.id          - (String) Optional unique Id for the filter field, useful for comparisons
  * <li>.title       - (String) The title to display for the filter field
  * <li>.placeholder - (String) Text to display when no filter value has been entered
- * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple values per category. Optional, default is `false`
+ * <li>.filterMultiselect - (Boolean) In `complex-select`, allow selection of multiple categories and values. Optional, default is `false`
  * <li>.filterType  - (String) The filter input field type (any html input type, or 'select' for a single select box or 'complex-select' for a category select box)
  * <li>.filterValues - (Array) List of valid select values used when filterType is 'select' or 'complex-select' (in where these values serve as case insensitve keys for .filterCategories objects)
  * <li>.filterCategories - (Array of (Objects)) For 'complex-select' only, array of objects whoes keys (case insensitive) match the .filterValues, these objects include each of the filter fields above (sans .placeholder)
@@ -81,26 +81,26 @@
             name: "John Smith",
             address: "415 East Main Street, Norfolk, Virginia",
             birthMonth: 'October',
-            car: 'Subaru-Outback'
+            car: 'subie-out'
 
           },
           {
             name: "Frank Livingston",
             address: "234 Elm Street, Pittsburgh, Pennsylvania",
             birthMonth: 'March',
-            car: 'Toyota-Prius'
+            car: 'Toyota-pri'
           },
           {
             name: "Judy Green",
             address: "2 Apple Boulevard, Cincinatti, Ohio",
             birthMonth: 'December',
-            car: 'Subaru-Impreza'
+            car: 'subie-Impreza'
           },
           {
             name: "Pat Thomas",
             address: "50 Second Street, New York, New York",
-            birthMonth: 'February',
-            car: 'Subaru-Outback'
+            birthMonth: 'jan',
+            car: 'subie-Crosstrek'
           }
         ];
         $scope.items = $scope.allItems;
@@ -114,9 +114,10 @@
           } else if (filter.id === 'address') {
             match = item.address.match(re) !== null;
           } else if (filter.id === 'birthMonth') {
-            match = item.birthMonth === filter.value;
+            match = item.birthMonth === filter.value.id || item.birthMonth === filter.value;
           } else if (filter.id === 'car') {
-            match = item.car === filter.value;
+            match = item.car === ((filter.value.filterCategory.id || filter.value.filterCategory)
+            + filter.value.filterDelimiter + (filter.value.filterValue.id || filter.value.filterValue));
           }
           return match;
         };
@@ -150,7 +151,16 @@
         var filterChange = function (filters) {
         $scope.filtersText = "";
           filters.forEach(function (filter) {
-            $scope.filtersText += filter.title + " : " + filter.value + "\n";
+            $scope.filtersText += filter.title + " : ";
+            if (filter.value.filterCategory) {
+              $scope.filtersText += ((filter.value.filterCategory.title || filter.value.filterCategory)
+              + filter.value.filterDelimiter + (filter.value.filterValue.title || filter.value.filterValue));
+            } else if (filter.value.title){
+              $scope.filtersText += filter.value.title;
+            } else {
+              $scope.filtersText += filter.value;
+            }
+            $scope.filtersText += "\n";
           });
           applyFilters(filters);
         };
@@ -174,24 +184,24 @@
               title:  'Birth Month',
               placeholder: 'Filter by Birth Month',
               filterType: 'select',
-              filterValues: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+              filterValues: [{title:'January', id:'jan'}, {title:'Feb', id:'February'}, 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
             },
            {
               id: 'car',
               title:  'Car',
               placeholder: 'Filter by Car Make',
               filterType: 'complex-select',
-              filterValues: ['Subaru', 'Toyota'],
+              filterValues: [{title:'Subaru', id:'subie'}, 'Toyota'],
               filterDelimiter: '-',
               filterCategoriesPlaceholder: 'Filter by Car Model',
-              filterCategories: {subaru: {
-                id: 'subaru',
+              filterCategories: {subie: {
+                id: 'subie',
                 title:  'Subaru',
-                filterValues: ['Outback', 'Crosstrek', 'Impreza']},
+                filterValues: [{title:'Outback', id:'out'}, 'Crosstrek', 'Impreza']},
                 toyota: {
                 id: 'toyota',
                 title:  'Toyota',
-                filterValues: ['Prius', 'Corolla', 'Echo']}
+                filterValues: [{title:'Prius', id:'pri'}, 'Corolla', 'Echo']}
                 }
             }
           ],
