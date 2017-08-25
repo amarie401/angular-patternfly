@@ -45,7 +45,7 @@
      <div class="col-md-12">
        <div class="row">
          <div class="col-md-4">
-           <form role="form"">
+           <form role="form">
              <div class="form-group">
                <label>Show</label></br>
                <label class="checkbox-inline">
@@ -103,7 +103,7 @@
        </div>
        <div class="row">
          <div class="col-md-4">
-           <form role="form"">
+           <form role="form">
              <div class="form-group">
                <label class="checkbox-inline">
                  <input type="checkbox" ng-model="data.dataAvailable">Data Available</input>
@@ -112,7 +112,7 @@
            </form>
          </div>
          <div class="col-md-4" ng-if="config.layout === 'compact'">
-          <form role="form"">
+          <form role="form">
            <div class="form-group">
              <label>Compact Label Position</label></br>
              <label class="radio-inline">
