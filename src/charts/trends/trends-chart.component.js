@@ -149,7 +149,7 @@
          callBackFn: function () {
             alert("Footer Callback Fn Called");
           }
-       }
+       };
 
        $scope.filterConfig = {
          filters : [{label:'Last 30 Days', value:'30'},
@@ -158,7 +158,7 @@
          callBackFn: function (f) {
             alert("Filter Callback Fn Called for '" + f.label + "' value = " + f.value);
           }
-       }
+       };
 
        $scope.layouts = [
          {

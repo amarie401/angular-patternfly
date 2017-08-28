@@ -60,7 +60,7 @@
          'callBackFn': function () {
             alert("Footer Callback Fn Called");
           }
-       }
+       };
 
        $scope.filterConfig = {
          'filters' : [{label:'Last 30 Days', value:'30'},
@@ -70,7 +70,7 @@
             alert("Filter Callback Fn Called for '" + f.label + "' value = " + f.value);
           },
         'defaultFilter' : '1'
-       }
+       };
 
        var today = new Date();
        var dates = ['dates'];
@@ -95,7 +95,7 @@
          'units'        : 'TB',
          'tooltipType'  : 'percentage',
          'compactLabelPosition'  : 'right'
-       }
+       };
 
        $scope.dataSingle = {
          'total': '250',
