@@ -97,6 +97,16 @@
          'compactLabelPosition'  : 'right'
        };
 
+       $scope.configRightLabel = {
+       'chartId'      : 'exampleRightLabelTrendsChart',
+         'title'        : 'Storage Capacity',
+         'layout'       : 'compact',
+         'valueType'    : 'actual',
+         'units'        : 'TB',
+         'tooltipType'  : 'percentage',
+         'compactLabelPosition'  : 'right'
+       };
+
        $scope.dataSingle = {
          'total': '250',
          'xData': dates,

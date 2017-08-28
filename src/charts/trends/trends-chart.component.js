@@ -112,18 +112,18 @@
            </form>
          </div>
          <div class="col-md-4" ng-if="config.layout === 'compact'">
-          <form role="form">
-           <div class="form-group">
-             <label>Compact Label Position</label></br>
-             <label class="radio-inline">
-           <input type="radio" ng-model="config.compactLabelPosition" value="left">Left</input>
-           </label>
-           <label class="radio-inline">
-           <input type="radio" ng-model="config.compactLabelPosition" value="right">Right</input>
-           </label>
-           </div>
+           <form role="form">
+             <div class="form-group">
+               <label>Compact Label Position</label></br>
+               <label class="radio-inline">
+                 <input type="radio" ng-model="config.compactLabelPosition" value="left">Left</input>
+               </label>
+               <label class="radio-inline">
+                 <input type="radio" ng-model="config.compactLabelPosition" value="right">Right</input>
+               </label>
+             </div>
            </form>
-           </div>
+         </div>
        </div>
      </div>
    </div>
