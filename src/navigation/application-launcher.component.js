@@ -33,7 +33,7 @@
        <div class="collapse navbar-collapse navbar-collapse-1">
          <ul class="nav navbar-nav navbar-utility">
            <li>
-             <pf-application-launcher items="navigationItems" label="{{label}}" is-disabled="isDisabled" is-list="isList" hidden-icons="hiddenIcons"></pf-application-launcher>
+             <pf-application-launcher items="navigationItems" label="{{label}}" is-disabled="isDisabled" is-list="isList" hidden-icons="ctrl.hiddenIcons === 'true'"></pf-application-launcher>
            </li>
            <li class="dropdown">
              <a class="nav-item-iconic" id="horizontalDropdownMenu11" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -57,6 +57,23 @@
          </ul>
        </div>
      </nav>
+     <div class="col-md-12">
+       <form role="form">
+         <div class="row">
+           <div class="col-md-3">
+             <div class="form-group">
+               <label>Grid Menu</label></br>
+               <label class="radio-inline">
+                 <input type="radio" ng-model="ctrl.hiddenIcons" value="false">Icons</input>
+               </label>
+               <label class="radio-inline">
+                 <input type="radio" ng-model="ctrl.hiddenIcons" value="true">No Icons</input>
+               </label>
+             </div>
+           </div>
+         </div>
+       </form>
+     </div>
    </div>
  </file>
  <file name="script.js">
@@ -91,8 +108,8 @@
 
        $scope.label = 'Application Launcher';
        $scope.isDisabled = false;
-       $scope.isList = false;
-       $scope.hiddenIcons = false;
+       $scope.isList = true;
+       $scope.hiddenIcons = 'false';
      }]);
  </file>
  </example>
