@@ -108,7 +108,7 @@
 
        $scope.label = 'Application Launcher';
        $scope.isDisabled = false;
-       $scope.isList = true;
+       $scope.isList = false;
        $scope.hiddenIcons = 'false';
      }]);
  </file>
