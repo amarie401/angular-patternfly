@@ -9,7 +9,7 @@
   }])
 
   //
-  // Directive that generates the rendered chart from the data model.
+  // Component that generates the rendered chart from the data model.
   //
   .component('pfCanvas', {
     templateUrl: "canvas-view/canvas/canvas.html",
@@ -20,71 +20,54 @@
       hideConnectors: "=?"
     },
     controller: function CanvasController ($scope, dragging, $element, $document) {
-      var controller = this;
+      var ctrl = this;
 
-      $scope.chart = new pfCanvas.ChartViewModel(controller.chartDataModel);
-      $scope.chartViewModel = $scope.chart;
-      //
-      // Reference to the document and jQuery, can be overridden for testting.
-      //
-      this.document = document;
-
-      //
-      // Wrap jQuery so it can easily be  mocked for testing.
-      //
-      this.jQuery = function (element) {
-        return angular.element(element);
-      };
+      ctrl.chart = new pfCanvas.ChartViewModel(ctrl.chartDataModel);
+      ctrl.chartViewModel = ctrl.chart;
 
       //
       // Init data-model variables.
       //
-      $scope.draggingConnection = false;
-      $scope.connectorSize = 6;
-      $scope.dragSelecting = false;
+      ctrl.draggingConnection = false;
+      ctrl.connectorSize = 6;
+      ctrl.dragSelecting = false;
 
       //
       // Reference to the connection, connector or node that the mouse is currently over.
       //
-      $scope.mouseOverConnector = null;
-      $scope.mouseOverConnection = null;
-      $scope.mouseOverNode = null;
+      ctrl.mouseOverConnector = null;
+      ctrl.mouseOverConnection = null;
+      ctrl.mouseOverNode = null;
 
-      //
-      // The class for connections and connectors.
-      //
-      this.connectionClass = 'connection';
-      this.connectorClass = 'connector';
-      this.nodeClass = 'node';
 
       //
       // Translate the coordinates so they are relative to the svg element.
       //
       this.translateCoordinates = function (x, y, evt) {
-        var svgElem =  $element.get(0);
+        var svgElem =  $element.get(0).children[0];
         var matrix = svgElem.getScreenCTM();
         var point = svgElem.createSVGPoint();
-        point.x = (x - evt.view.pageXOffset) / $scope.zoomLevel();
-        point.y = (y - evt.view.pageYOffset) / $scope.zoomLevel();
+        point.x = (x - evt.view.pageXOffset) / ctrl.zoomLevel();
+        point.y = (y - evt.view.pageYOffset) / ctrl.zoomLevel();
 
         return point.matrixTransform(matrix.inverse());
       };
 
-      $scope.hideConnectors = $scope.hideConnectors ? $scope.hideConnectors : false;
+      ctrl.hideConnectors = ctrl.hideConnectors ? ctrl.hideConnectors : false;
 
-      $scope.isConnectorConnected = function (connector) {
+      ctrl.isConnectorConnected = function (connector) {
         return (connector && connector.connected());
       };
 
-      $scope.isConnectorUnconnectedAndValid = function (connector) {
+      ctrl.isConnectorUnconnectedAndValid = function (connector) {
         return (connector && !connector.connected() && !connector.invalid() &&
-          connector.parentNode() !== $scope.connectingModeSourceNode);
+          connector.parentNode() !== ctrl.connectingModeSourceNode);
       };
 
-      // determins if a dest. connector is connected to the source node
-      $scope.isConnectedTo = function (connector, node) {
+      // determines if a dest. connector is connected to the source node
+      ctrl.isConnectedTo = function (connector, node) {
         var i,connection;
-        var connections = $scope.chart.connections;
+        var connections = ctrl.chart.connections;
         for (i = 0; i < connections.length; i++) {
           connection = connections[i];
           if (connection.dest === connector && connection.source.parentNode() === node) {
@@ -95,58 +78,58 @@
         return false;
       };
 
-      $scope.availableConnections = function () {
-        return $scope.chart.validConnections;
+      ctrl.availableConnections = function () {
+        return ctrl.chart.validConnections;
       };
 
-      $scope.foreignObjectSupported = function () {
+      ctrl.foreignObjectSupported = function () {
         return $document[0].implementation.hasFeature('http://www.w3.org/TR/SVG11/feature#Extensibility', '1.1');
       };
 
-      $scope.addNodeToCanvas = function (newNode) {
-        $scope.chart.addNode(newNode);
+      ctrl.addNodeToCanvas = function (newNode) {
+        ctrl.chart.addNode(newNode);
       };
 
       $scope.$on('selectAll', function (evt, args) {
-        $scope.selectAll();
+        ctrl.selectAll();
       });
 
-      $scope.selectAll = function () {
-        $scope.chart.selectAll();
+      ctrl.selectAll = function () {
+        ctrl.chart.selectAll();
       };
 
       $scope.$on('deselectAll', function (evt, args) {
-        $scope.deselectAll();
+        ctrl.deselectAll();
       });
 
-      $scope.deselectAll = function () {
-        $scope.chart.deselectAll();
+      ctrl.deselectAll = function () {
+        ctrl.chart.deselectAll();
       };
 
       $scope.$on('deleteSelected', function (evt, args) {
-        $scope.deleteSelected();
+        ctrl.deleteSelected();
       });
 
-      $scope.deleteSelected = function () {
-        $scope.chart.deleteSelected();
+      ctrl.deleteSelected = function () {
+        ctrl.chart.deleteSelected();
       };
 
       //
       // Called on mouse down in the chart.
       //
-      $scope.mouseDown = function (evt) {
-        if ($scope.readOnly) {
+      ctrl.mouseDown = function (evt) {
+        if (ctrl.readOnly) {
           return;
         }
 
-        if ($scope.chart.inConnectingMode ) {
-          // camceling out of connection mode, remove unused output connector
-          $scope.cancelConnectingMode();
+        if (ctrl.chart.inConnectingMode ) {
+          // canceling out of connection mode, remove unused output connector
+          ctrl.cancelConnectingMode();
         }
 
-        $scope.chart.deselectAll();
+        ctrl.chart.deselectAll();
 
-        $scope.chart.clickedOnChart = true;
+        ctrl.chart.clickedOnChart = true;
 
         dragging.startDrag(evt, {
 
@@ -155,14 +138,14 @@
           //
           dragStarted: function (x, y) {
             var startPoint;
-            $scope.dragSelecting = true;
-            startPoint = controller.translateCoordinates(x, y, evt);
-            $scope.dragSelectionStartPoint = startPoint;
-            $scope.dragSelectionRect = {
+            ctrl.dragSelecting = true;
+            startPoint = ctrl.translateCoordinates(x, y, evt);
+            ctrl.dragSelectionStartPoint = startPoint;
+            ctrl.dragSelectionRect = {
               x: startPoint.x,
               y: startPoint.y,
               width: 0,
-              height: 0,
+              height: 0
             };
           },
 
@@ -170,10 +153,10 @@
           // Update the drag selection rect while dragging continues.
           //
           dragging: function (x, y) {
-            var startPoint = $scope.dragSelectionStartPoint;
-            var curPoint = controller.translateCoordinates(x, y, evt);
+            var startPoint = ctrl.dragSelectionStartPoint;
+            var curPoint = ctrl.translateCoordinates(x, y, evt);
 
-            $scope.dragSelectionRect = {
+            ctrl.dragSelectionRect = {
               x: curPoint.x > startPoint.x ? startPoint.x : curPoint.x,
               y: curPoint.y > startPoint.y ? startPoint.y : curPoint.y,
               width: curPoint.x > startPoint.x ? curPoint.x - startPoint.x : startPoint.x - curPoint.x,
@@ -185,38 +168,38 @@
           // Dragging has ended... select all that are within the drag selection rect.
           //
           dragEnded: function () {
-            $scope.dragSelecting = false;
-            $scope.chart.applySelectionRect($scope.dragSelectionRect);
-            delete $scope.dragSelectionStartPoint;
-            delete $scope.dragSelectionRect;
-          },
+            ctrl.dragSelecting = false;
+            ctrl.chart.applySelectionRect(ctrl.dragSelectionRect);
+            delete ctrl.dragSelectionStartPoint;
+            delete ctrl.dragSelectionRect;
+          }
         });
       };
 
       //
       // Handle nodeMouseOver on an node.
       //
-      $scope.nodeMouseOver = function (evt, node) {
-        if (!$scope.readOnly) {
-          $scope.mouseOverNode = node;
+      ctrl.nodeMouseOver = function (evt, node) {
+        if (!ctrl.readOnly) {
+          ctrl.mouseOverNode = node;
         }
       };
 
       //
       // Handle nodeMouseLeave on an node.
       //
-      $scope.nodeMouseLeave = function (evt, node) {
-        $scope.mouseOverNode = null;
+      ctrl.nodeMouseLeave = function (evt, node) {
+        ctrl.mouseOverNode = null;
       };
 
       //
       // Handle mousedown on a node.
       //
-      $scope.nodeMouseDown = function (evt, node) {
-        var chart = $scope.chart;
+      ctrl.nodeMouseDown = function (evt, node) {
+        var chart = ctrl.chart;
         var lastMouseCoords;
 
-        if ($scope.readOnly) {
+        if (ctrl.readOnly) {
           return;
         }
 
@@ -226,7 +209,7 @@
           // Node dragging has commenced.
           //
           dragStarted: function (x, y) {
-            lastMouseCoords = controller.translateCoordinates(x, y, evt);
+            lastMouseCoords = ctrl.translateCoordinates(x, y, evt);
 
             //
             // If nothing is selected when dragging starts,
@@ -242,7 +225,7 @@
           // Dragging selected nodes... update their x,y coordinates.
           //
           dragging: function (x, y) {
-            var curCoords = controller.translateCoordinates(x, y, evt);
+            var curCoords = ctrl.translateCoordinates(x, y, evt);
             var deltaX = curCoords.x - lastMouseCoords.x;
             var deltaY = curCoords.y - lastMouseCoords.y;
 
@@ -256,7 +239,7 @@
           //
           clicked: function () {
             chart.handleNodeClicked(node, evt.ctrlKey);
-          },
+          }
 
         });
       };
@@ -264,66 +247,67 @@
       //
       // Listen for node action
       //
-      $scope.$on('nodeActionClicked', function (evt, args) {
+      ctrl.actionHandler = function (eventType, args) {
         var action = args.action;
         var node = args.node;
 
-        if (action === 'nodeActionConnect') {
-          $scope.startConnectingMode(node);
+        if (eventType === 'nodeActionClicked') {
+          if (action === 'nodeActionConnect') {
+            ctrl.startConnectingMode(node);
+          }
+        } else if (eventType === 'nodeActionClosed') {
+          ctrl.mouseOverNode = null;
         }
-      });
-
-      $scope.$on('nodeActionClosed', function () {
-        $scope.mouseOverNode = null;
-      });
-
-      $scope.connectingModeOutputConnector = null;
-      $scope.connectingModeSourceNode = null;
-
-      $scope.startConnectingMode = function (node) {
-        $scope.chart.inConnectingMode = true;
-        $scope.hideConnectors = false;
-        $scope.connectingModeSourceNode = node;
-        $scope.connectingModeSourceNode.select();
-        $scope.connectingModeOutputConnector = node.getOutputConnector();
-        $scope.chart.updateValidNodesAndConnectors($scope.connectingModeSourceNode);
       };
 
-      $scope.cancelConnectingMode = function () {
+
+      ctrl.connectingModeOutputConnector = null;
+      ctrl.connectingModeSourceNode = null;
+
+      ctrl.startConnectingMode = function (node) {
+        ctrl.chart.inConnectingMode = true;
+        ctrl.hideConnectors = false;
+        ctrl.connectingModeSourceNode = node;
+        ctrl.connectingModeSourceNode.select();
+        ctrl.connectingModeOutputConnector = node.getOutputConnector();
+        ctrl.chart.updateValidNodesAndConnectors(ctrl.connectingModeSourceNode);
+      };
+
+      ctrl.cancelConnectingMode = function () {
         // if output connector not connected to something, remove it
-        if (!$scope.connectingModeOutputConnector.connected()) {
-          $scope.chart.removeOutputConnector($scope.connectingModeOutputConnector);
+        if (!ctrl.connectingModeOutputConnector.connected()) {
+          ctrl.chart.removeOutputConnector(ctrl.connectingModeOutputConnector);
         }
-        $scope.stopConnectingMode();
+        ctrl.stopConnectingMode();
       };
 
-      $scope.stopConnectingMode = function () {
-        $scope.chart.inConnectingMode = false;
-        $scope.chart.resetValidNodesAndConnectors();
+      ctrl.stopConnectingMode = function () {
+        ctrl.chart.inConnectingMode = false;
+        ctrl.chart.resetValidNodesAndConnectors();
       };
 
       //
       // Handle connectionMouseOver on an connection.
       //
-      $scope.connectionMouseOver = function (evt, connection) {
-        if (!$scope.draggingConnection && !$scope.readOnly) {  // Only allow 'connection mouse over' when not dragging out a connection.
-          $scope.mouseOverConnection = connection;
+      ctrl.connectionMouseOver = function (evt, connection) {
+        if (!ctrl.draggingConnection && !ctrl.readOnly) {  // Only allow 'connection mouse over' when not dragging out a connection.
+          ctrl.mouseOverConnection = connection;
         }
       };
 
       //
       // Handle connectionMouseLeave on an connection.
       //
-      $scope.connectionMouseLeave = function (evt, connection) {
-        $scope.mouseOverConnection = null;
+      ctrl.connectionMouseLeave = function (evt, connection) {
+        ctrl.mouseOverConnection = null;
       };
 
       //
       // Handle mousedown on a connection.
       //
-      $scope.connectionMouseDown = function (evt, connection) {
-        var chart = $scope.chart;
-        if (!$scope.readOnly) {
+      ctrl.connectionMouseDown = function (evt, connection) {
+        var chart = ctrl.chart;
+        if (!ctrl.readOnly) {
           chart.handleConnectionMouseDown(connection, evt.ctrlKey);
         }
         // Don't let the chart handle the mouse down.
@@ -334,26 +318,26 @@
       //
       // Handle connectorMouseOver on an connector.
       //
-      $scope.connectorMouseOver = function (evt, node, connector, connectorIndex, isInputConnector) {
-        if (!$scope.readOnly) {
-          $scope.mouseOverConnector = connector;
+      ctrl.connectorMouseOver = function (evt, node, connector, connectorIndex, isInputConnector) {
+        if (!ctrl.readOnly) {
+          ctrl.mouseOverConnector = connector;
         }
       };
 
       //
       // Handle connectorMouseLeave on an connector.
       //
-      $scope.connectorMouseLeave = function (evt, node, connector, connectorIndex, isInputConnector) {
-        $scope.mouseOverConnector = null;
+      ctrl.connectorMouseLeave = function (evt, node, connector, connectorIndex, isInputConnector) {
+        ctrl.mouseOverConnector = null;
       };
 
       //
       // Handle mousedown on an input connector.
       //
-      $scope.connectorMouseDown = function (evt, node, connector, connectorIndex, isInputConnector) {
-        if ($scope.chart.inConnectingMode && node !== $scope.connectingModeSourceNode) {
-          $scope.chart.createNewConnection($scope.connectingModeOutputConnector, $scope.mouseOverConnector);
-          $scope.stopConnectingMode();
+      ctrl.connectorMouseDown = function (evt, node, connector, connectorIndex, isInputConnector) {
+        if (ctrl.chart.inConnectingMode && node !== ctrl.connectingModeSourceNode) {
+          ctrl.chart.createNewConnection(ctrl.connectingModeOutputConnector, ctrl.mouseOverConnector);
+          ctrl.stopConnectingMode();
         }
       };
 
@@ -361,25 +345,25 @@
       // zoom.
       //
       $scope.$on('zoomIn', function (evt, args) {
-        $scope.chart.zoom.in();
+        ctrl.chart.zoom.in();
       });
 
       $scope.$on('zoomOut', function (evt, args) {
-        $scope.chart.zoom.out();
+        ctrl.chart.zoom.out();
       });
 
       $scope.maxZoom = function () {
-        return ($scope.chart.chartViewModel && $scope.chart.chartViewModel.zoom) ? $scope.chart.chartViewModel.zoom.isMax() : false;
+        return (ctrl.chart.chartViewModel && ctrl.chart.chartViewModel.zoom) ? ctrl.chart.chartViewModel.zoom.isMax() : false;
       };
       $scope.minZoom = function () {
-        return ($scope.chart.chartViewModel && $scope.chart.chartViewModel.zoom) ? $scope.chart.chartViewModel.zoom.isMin() : false;
+        return (ctrl.chart.chartViewModel && ctrl.chart.chartViewModel.zoom) ? ctrl.chart.chartViewModel.zoom.isMin() : false;
       };
 
-      $scope.zoomLevel = function () {
-        return $scope.chart.zoom.getLevel();
+      ctrl.zoomLevel = function () {
+        return ctrl.chart.zoom.getLevel();
       };
 
-      controller.$onInit = function () {
+      ctrl.$onInit = function () {
         var deleteKeyCode = 46;
         var ctrlKeyCode = 17;
         var ctrlDown = false;
