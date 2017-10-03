@@ -9,7 +9,7 @@
   }])
 
   //
-  // Directive that generates the rendered chart from the data model.
+  // Component that generates the rendered chart from the data model.
   //
   .component('pfCanvas', {
     templateUrl: "canvas-view/canvas/canvas.html",
@@ -25,7 +25,7 @@
       $scope.chart = new pfCanvas.ChartViewModel(controller.chartDataModel);
       $scope.chartViewModel = $scope.chart;
       //
-      // Reference to the document and jQuery, can be overridden for testting.
+      // Reference to the document and jQuery, can be overridden for testing.
       //
       this.document = document;
 
@@ -61,7 +61,7 @@
       // Translate the coordinates so they are relative to the svg element.
       //
       this.translateCoordinates = function (x, y, evt) {
-        var svgElem =  $element.get(0);
+        var svgElem =  $element.get(0).children[0];
         var matrix = svgElem.getScreenCTM();
         var point = svgElem.createSVGPoint();
         point.x = (x - evt.view.pageXOffset) / $scope.zoomLevel();
