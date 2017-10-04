@@ -172,7 +172,7 @@
             ctrl.chart.applySelectionRect(ctrl.dragSelectionRect);
             delete ctrl.dragSelectionStartPoint;
             delete ctrl.dragSelectionRect;
-          },
+          }
         });
       };
 
