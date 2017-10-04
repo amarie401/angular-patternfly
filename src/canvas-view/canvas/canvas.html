@@ -13,10 +13,10 @@
   <!-- Connection Mode Notification -->
   <g ng-if="$ctrl.chart.inConnectingMode">
     <rect class="connecting-mode-rec" ry="1" rx="1" x="0" y="0" width="640" height="32"></rect>
-    <text class="connecting-mode-label" x="12" y="22" ng-if="availableConnections()">
+    <text class="connecting-mode-label" x="12" y="22" ng-if="$ctrl.availableConnections()">
       Select a second item to complete the connection or click on the canvas to cancel
     </text>
-    <text class="connecting-mode-label-warning" x="12" y="22" ng-if="!availableConnections()">
+    <text class="connecting-mode-label-warning" x="12" y="22" ng-if="!$ctrl.availableConnections()">
       No available connections! Click on the canvas to cancel
     </text>
   </g>
@@ -133,7 +133,7 @@
     <!-- Connected Input Connectors -->
 
     <g ng-if="!$ctrl.hideConnectors"
-      ng-repeat="connector in node.inputConnectors | filter: isConnectorConnected"
+      ng-repeat="connector in node.inputConnectors | filter: $ctrl.isConnectorConnected"
       ng-mousedown="$ctrl.connectorMouseDown($event, node, connector, $index, true)"
       ng-mouseover="$ctrl.connectorMouseOver($event, node, connector, $index, true)"
       ng-mouseleave="$ctrl.connectorMouseLeave($event, node, connector, $index, true)"
@@ -152,7 +152,7 @@
     <!-- Unconnected Input Connectors -->
 
     <g ng-if="$ctrl.chart.inConnectingMode"
-       ng-repeat="connector in node.inputConnectors | filter: isConnectorUnconnectedAndValid"
+       ng-repeat="connector in node.inputConnectors | filter: $ctrl.isConnectorUnconnectedAndValid"
        ng-mousedown="$ctrl.connectorMouseDown($event, node, connector, $index, true)"
        ng-mouseover="$ctrl.connectorMouseOver($event, node, connector, $index, true)"
        ng-mouseleave="$ctrl.connectorMouseLeave($event, node, connector, $index, true)"
