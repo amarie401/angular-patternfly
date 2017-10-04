@@ -10,6 +10,7 @@
       scope: {
         node: '=',
         nodeActions: '=',
+        actionHandler: '='
       },
       controller: NodeToolbarController,
       templateUrl: 'canvas-view/canvas/node-toolbar.html',
@@ -25,12 +26,16 @@
 
       $scope.actionIconClicked = function (action) {
         vm.selectedAction = action;
-        $scope.$emit('nodeActionClicked', {'action': action, 'node': vm.node});
+        if (angular.isFunction(vm.actionHandler)) {
+          vm.actionHandler('nodeActionClicked', {'action': action, 'node': vm.node});
+        }
       };
 
       $scope.close = function () {
         vm.selectedAction = 'none';
-        $scope.$emit('nodeActionClosed');
+        if (angular.isFunction(vm.actionHandler)) {
+          actionHandler('nodeActionClosed');
+        }
       };
     }
   }
