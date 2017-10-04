@@ -264,18 +264,31 @@
       //
       // Listen for node action
       //
-      $scope.$on('nodeActionClicked', function (evt, args) {
+      $scope.actionHandler = function (eventType, args) {
         var action = args.action;
         var node = args.node;
 
-        if (action === 'nodeActionConnect') {
-          $scope.startConnectingMode(node);
+        if (eventType === 'nodeActionClicked') {
+          if (action === 'nodeActionConnect') {
+            $scope.startConnectingMode(node);
+          }
+        } else if (eventType === 'nodeActionClosed') {
+          $scope.mouseOverNode = null;
         }
-      });
+      };
 
-      $scope.$on('nodeActionClosed', function () {
-        $scope.mouseOverNode = null;
-      });
+      //$scope.$on('nodeActionClicked', function (evt, args) {
+      //  var action = args.action;
+      //  var node = args.node;
+      //
+      //  if (action === 'nodeActionConnect') {
+      //    $scope.startConnectingMode(node);
+      //  }
+      //});
+      //
+      //$scope.$on('nodeActionClosed', function () {
+      //  $scope.mouseOverNode = null;
+      //});
 
       $scope.connectingModeOutputConnector = null;
       $scope.connectingModeSourceNode = null;
