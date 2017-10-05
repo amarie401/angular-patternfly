@@ -4,7 +4,6 @@
   angular.module('patternfly.canvas')
   .component('toolboxItems', {
     templateUrl: 'canvas-view/canvas-editor/toolbox-items.html',
-    controllerAs: 'vm',
     bindings: {
       items: '=',
       startDragCallback: '=',
@@ -12,16 +11,16 @@
       searchText: '='
     },
     controller: function toolboxItemsController () {
-      var vm = this;
+      var ctrl = this;
 
-      vm.clickCallbackfmDir = function (item) {
+      ctrl.clickCallbackfmDir = function (item) {
         if (!item.disableInToolbox) {
-          vm.clickCallback(item);
+          ctrl.clickCallback(item);
         }
       };
 
-      vm.startDragCallbackfmDir = function (event, ui, item) {
-        vm.startDragCallback(event, ui, item);
+      ctrl.startDragCallbackfmDir = function (event, ui, item) {
+        ctrl.startDragCallback(event, ui, item);
       };
     }
   });

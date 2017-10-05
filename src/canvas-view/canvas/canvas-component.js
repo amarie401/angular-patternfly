@@ -247,19 +247,18 @@
       //
       // Listen for node action
       //
-      ctrl.actionHandler = function (eventType, args) {
+      ctrl.nodeClickHandler = function (args) {
         var action = args.action;
         var node = args.node;
 
-        if (eventType === 'nodeActionClicked') {
-          if (action === 'nodeActionConnect') {
-            ctrl.startConnectingMode(node);
-          }
-        } else if (eventType === 'nodeActionClosed') {
-          ctrl.mouseOverNode = null;
+        if (action === 'nodeActionConnect') {
+          ctrl.startConnectingMode(node);
         }
       };
 
+      ctrl.nodeCloseHandler = function () {
+        ctrl.mouseOverNode = null;
+      };
 
       ctrl.connectingModeOutputConnector = null;
       ctrl.connectingModeSourceNode = null;
