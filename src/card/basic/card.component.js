@@ -8,6 +8,7 @@
  * @param {boolean=} showTopBorder Show/Hide the blue top border. True shows top border, false (default) hides top border
  * @param {boolean=} showTitlesSeparator Show/Hide the grey line between the title and sub-title.
  * True (default) shows the line, false hides the line
+ * @param {boolean=} showSpinner Show/Hide the spinner for loading state. True shows the spinner, false (default) hides the spinner
  * @param {object=} footer footer configuration properties:<br/>
  * <ul style='list-style-type: none'>
  * <li>.iconClass  - (optional) the icon to show on the bottom left of the footer panel
@@ -91,6 +92,7 @@ angular.module('patternfly.card').component('pfCard', {
     subTitle: '@?',
     showTopBorder: '@?',
     showTitlesSeparator: '@?',
+    showSpinner: '<?',
     footer: '=?',
     filter: '=?'
   },
@@ -104,11 +106,9 @@ angular.module('patternfly.card').component('pfCard', {
         ctrl.currentFilter = ctrl.filter.filters[0];
       }
     }
-
     ctrl.footerCallBackFn = function () {
       ctrl.footerCallBackResult = ctrl.footer.callBackFn();
     };
-
     ctrl.filterCallBackFn = function (f) {
       ctrl.currentFilter = f;
       if (ctrl.filter.callBackFn) {
@@ -130,6 +130,7 @@ angular.module('patternfly.card').component('pfCard', {
 
     ctrl.$onInit = function () {
       ctrl.shouldShowTitlesSeparator = (!ctrl.showTitlesSeparator || ctrl.showTitlesSeparator === 'true');
+      ctrl.showSpinner = ctrl.showSpinner === true;
     };
   }
 });
