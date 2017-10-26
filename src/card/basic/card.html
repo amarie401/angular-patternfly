@@ -5,9 +5,9 @@
   </div>
   <span ng-if="$ctrl.subTitle && !$ctrl.showSpinner" class="card-pf-subtitle">{{$ctrl.subTitle}}</span>
 
-  <div class="card-pf-body">
+  <div class="card-pf-body" ng-class="{'show-spinner': $ctrl.showSpinner}">
     <div ng-if="$ctrl.showSpinner" class="spinner spinner-lg"></div>
-    <div ng-show="!$ctrl.showSpinner" ng-transclude></div>
+    <div ng-class="{'hide-body': $ctrl.showSpinner}" ng-transclude></div>
   </div>
   <div ng-if="$ctrl.footer && !$ctrl.showSpinner" class="card-pf-footer">
     <div ng-if="$ctrl.showFilterInFooter()" ng-include="'card/basic/card-filter.html'"></div>

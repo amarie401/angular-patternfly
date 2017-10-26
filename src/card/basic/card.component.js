@@ -36,7 +36,7 @@
  <file name="index.html">
    <div ng-controller="ChartCtrl">
      <label class="label-title">Card With Multiple Utilization Bars</label>
-     <pf-card head-title="System Resources" show-top-border="true" style="width: 65%">
+     <pf-card head-title="System Resources" show-spinner="dataLoading" show-top-border="true">
        <pf-utilization-bar-chart chart-data=data2 chart-title=title2 layout=layoutInline units=units2 threshold-error="85" threshold-warning="60"></pf-utilization-bar-chart>
        <pf-utilization-bar-chart chart-data=data3 chart-title=title3 layout=layoutInline units=units3 threshold-error="85" threshold-warning="60"></pf-utilization-bar-chart>
        <pf-utilization-bar-chart chart-data=data4 chart-title=title4 layout=layoutInline units=units4 threshold-error="85" threshold-warning="60"></pf-utilization-bar-chart>
@@ -45,37 +45,44 @@
    </div>
  </file>
  <file name="script.js">
- angular.module( 'demo', ['patternfly.charts', 'patternfly.card'] ).controller( 'ChartCtrl', function( $scope ) {
+ angular.module( 'demo', ['patternfly.charts', 'patternfly.card'] ).controller( 'ChartCtrl', function( $scope, $timeout ) {
+
+       $scope.dataLoading = true;
 
        $scope.title2 = 'Memory';
        $scope.units2 = 'GB';
 
-       $scope.data2 = {
-         'used': '25',
-         'total': '100'
-       };
-
        $scope.title3 = 'CPU Usage';
        $scope.units3 = 'MHz';
 
-       $scope.data3 = {
-         'used': '420',
-         'total': '500'
-       };
-
        $scope.title4 = 'Disk Usage';
        $scope.units4 = 'TB';
-       $scope.data4 = {
-         'used': '350',
-         'total': '500'
-       };
 
        $scope.title5 = 'Disk I/O';
-       $scope.units5 = 'I/Ops';
-       $scope.data5 = {
-         'used': '450',
-         'total': '500'
-       };
+         $scope.units5 = 'I/Ops';
+
+       $timeout(function () {
+         $scope.dataLoading = false;
+
+         $scope.data2 = {
+           'used': '25',
+           'total': '100'
+         };
+
+         $scope.data3 = {
+           'used': '420',
+           'total': '500'
+         };
+
+         $scope.data4 = {
+           'used': '350',
+           'total': '500'
+         };
+         $scope.data5 = {
+           'used': '450',
+           'total': '500'
+         };
+      }, 3000 );
 
        $scope.layoutInline = {
          'type': 'inline'
