@@ -13,6 +13,9 @@
  * </ul>
  * @param {boolean=} show-top-border Show/hide the top border, true shows top border, false (default) hides top border
  * @param {boolean} htmlContent Flag to allow HTML content within the info options
+ * @param {boolean=} showSpinner Show/Hide the spinner for loading state. True shows the spinner, false (default) hides the spinner
+ * @param {string=} spinnerText Text for the card spinner
+ * @param {string=} spinnerCardHeight Height to set for the card when data is loading and spinner is shown
  *
  * @description
  * Component for easily displaying textual information
@@ -30,14 +33,20 @@
        <pf-info-status-card status="infoStatusTitless"></pf-info-status-card>
        <br/>
        <label>With HTML</label>
-       <pf-info-status-card status="infoStatusAlt" html-content="true"></pf-info-status-card>
+       <pf-info-status-card status="infoStatusAlt" html-content="true" show-spinner="dataLoading" spinner-card-height="122" spinner-text="Loading"></pf-info-status-card>
+       <br/>
+       <label>Loading State</label>
+       <pf-info-status-card status="infoStatus2" show-top-border="true" spinner-card-height="122" show-spinner="dataLoading" spinner-text="Loading"></pf-info-status-card>
      </div>
    </div>
  </file>
 
  <file name="script.js">
-   angular.module( 'patternfly.card' ).controller( 'CardDemoCtrl', function( $scope, $window ) {
+ angular.module( 'patternfly.card' ).controller( 'CardDemoCtrl', function( $scope, $window, $timeout ) {
     var imagePath = $window.IMAGE_PATH || "img";
+
+    $scope.dataLoading = true;
+
     $scope.infoStatus = {
       "title":"TinyCore-local",
       "href":"#",
@@ -50,6 +59,11 @@
       ]
     };
 
+    $scope.infoStatus2 = {
+        "title":"TinyCore-local",
+        "iconClass": "fa fa-shield"
+    };
+
     $scope.infoStatusTitless = {
       "iconImage": imagePath + "/OpenShift-logo.svg",
       "info":[
@@ -60,15 +74,33 @@
         ]
     };
 
-    $scope.infoStatusAlt = {
-      "title":"Favorite Things",
-      "iconClass":"fa fa-heart",
-      "info":[
-        "<i class='fa fa-coffee'>",
-        "<i class='fa fa-motorcycle'>",
-        "<b>Tacos</b>"
-      ]
-    };
+    $scope.infoStatusAlt = {};
+
+    $timeout(function () {
+      $scope.dataLoading = false;
+
+      $scope.infoStatus2 = {
+        "title":"TinyCore-local",
+        "href":"#",
+        "iconClass": "fa fa-shield",
+        "info":[
+          "VM Name: aapdemo002",
+          "Host Name: localhost.localdomian",
+          "IP Address: 10.9.62.100",
+          "Power status: on"
+        ]
+      };
+
+      $scope.infoStatusAlt = {
+        "title":"Favorite Things",
+        "iconClass":"fa fa-heart",
+        "info":[
+          "<i class='fa fa-coffee'>",
+          "<i class='fa fa-motorcycle'>",
+          "<b>Tacos</b>"
+        ]
+      };
+    }, 6000 );
    });
  </file>
 
@@ -79,6 +111,9 @@ angular.module( 'patternfly.card' ).component('pfInfoStatusCard', {
   bindings: {
     status: '=',
     showTopBorder: '@?',
+    showSpinner: '<?',
+    spinnerText: '@?',
+    spinnerCardHeight: '@?',
     htmlContent: '@?'
   },
   templateUrl: 'card/info-status/info-status-card.html',
@@ -88,9 +123,14 @@ angular.module( 'patternfly.card' ).component('pfInfoStatusCard', {
     ctrl.$onInit = function () {
       ctrl.shouldShowTopBorder = (ctrl.showTopBorder === 'true');
       ctrl.shouldShowHtmlContent = (ctrl.htmlContent === 'true');
+      ctrl.showSpinner = ctrl.showSpinner === true;
       ctrl.trustAsHtml = function (html) {
         return $sce.trustAsHtml(html);
       };
+
+      if (ctrl.spinnerCardHeight) {
+        ctrl.spinnerHeight = {'height': ctrl.spinnerCardHeight};
+      }
     };
   }
 });
