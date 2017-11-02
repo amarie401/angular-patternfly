@@ -30,6 +30,9 @@
  *   </ul>
  * </ul>
  * @param {boolean=} show-top-border Show/hide the top border, true shows top border, false (default) hides top border
+ * @param {boolean=} showSpinner Show/Hide the spinner for loading state. True shows the spinner, false (default) hides the spinner
+ * @param {string=} spinnerText Text for the card spinner
+ * @param {string=} spinnerCardHeight Height to set for the card when data is loading and spinner is shown
  * @param {string=} layout Various alternative layouts the aggregate status card may have:<br/>
  * <ul style='list-style-type: none'>
  * <li>'mini' displays a mini aggregate status card.  Note: when using 'mini' layout, only one notification can be specified in the status object
@@ -63,13 +66,19 @@
        <i>(depreciated, use layout = 'tall' instead)</i>
        </br></br>
        <pf-aggregate-status-card status="aggStatusAlt" show-top-border="true" alt-layout="true"></pf-aggregate-status-card>
+       <br/>
+       <label>Loading State</label>
+       <pf-aggregate-status-card status="aggStatusAlt2" spinner-card-height="150" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" layout="tall"></pf-aggregate-status-card>
      </div>
    </div>
  </file>
 
  <file name="script.js">
-   angular.module( 'patternfly.card' ).controller( 'CardDemoCtrl', function( $scope, $window ) {
+   angular.module( 'patternfly.card' ).controller( 'CardDemoCtrl', function( $scope, $window, $timeout ) {
     var imagePath = $window.IMAGE_PATH || "img";
+
+    $scope.dataLoading = true;
+
     $scope.status = {
       "title":"Nodes",
       "count":793,
@@ -103,28 +112,49 @@
           "href":"#"
         }
       ]
-     };
+    };
 
-     $scope.miniAggStatus = {
+    $timeout(function () {
+      $scope.dataLoading = false;
+
+      $scope.aggStatusAlt2 = {
+        "title":"Providers",
+        "count":3,
+        "notifications":[
+          {
+            "iconImage": imagePath + "/kubernetes.svg",
+            "count":1,
+            "href":"#"
+          },
+          {
+            "iconImage": imagePath + "/OpenShift-logo.svg",
+            "count":2,
+            "href":"#"
+          }
+        ]
+      };
+    }, 6000 );
+
+    $scope.miniAggStatus = {
       "iconClass":"pficon pficon-container-node",
       "title":"Nodes",
       "count":52,
       "href":"#",
       "notification": {
-          "iconClass":"pficon pficon-error-circle-o",
-          "count":3
-        }
-     };
+        "iconClass":"pficon pficon-error-circle-o",
+        "count":3
+      }
+    };
 
-     $scope.miniAggStatus2 = {
+    $scope.miniAggStatus2 = {
       "iconClass":"pficon pficon-cluster",
       "title":"Adipiscing",
       "count":9,
       "href":"#",
       "notification":{
-          "iconClass":"pficon pficon-ok"
-        }
-     };
+        "iconClass":"pficon pficon-ok"
+      }
+    };
    });
  </file>
 
@@ -135,6 +165,9 @@ angular.module( 'patternfly.card' ).component('pfAggregateStatusCard', {
   bindings: {
     status: '=',
     showTopBorder: '@?',
+    showSpinner: '<?',
+    spinnerText: '@?',
+    spinnerCardHeight: '@?',
     altLayout: '@?',
     layout: '@?'
   },
@@ -146,6 +179,11 @@ angular.module( 'patternfly.card' ).component('pfAggregateStatusCard', {
       ctrl.shouldShowTopBorder = (ctrl.showTopBorder === 'true');
       ctrl.isAltLayout = (ctrl.altLayout === 'true' || ctrl.layout === 'tall');
       ctrl.isMiniLayout = (ctrl.layout === 'mini');
+      ctrl.showSpinner = ctrl.showSpinner === true;
+
+      if (ctrl.spinnerCardHeight) {
+        ctrl.spinnerHeight = {'height': ctrl.spinnerCardHeight};
+      }
     };
   }
 });

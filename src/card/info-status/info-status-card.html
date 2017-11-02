@@ -1,11 +1,19 @@
-<div class="card-pf card-pf-info-status"
-     ng-class="{'card-pf-accented': $ctrl.shouldShowTopBorder}">
-  <div class="card-pf-info-image">
+<div class="card-pf card-pf-info-status" ng-class="{'card-pf-accented': $ctrl.shouldShowTopBorder}">
+  <div ng-if="$ctrl.showSpinner" class="card-pf-body show-spinner" ng-style="$ctrl.showSpinner ? $ctrl.spinnerHeight : {}">
+    <div class="spinner-container">
+      <div class="loading-indicator">
+        <span class="spinner spinner-lg" aria-hidden="true"></span>
+        <span ng-if="$ctrl.spinnerText" class="loading-text">{{$ctrl.spinnerText}}</span>
+        <label ng-if="!$ctrl.spinnerText" class="sr-only">Loading</label>
+      </div>
+    </div>
+  </div>
+  <div ng-if="!$ctrl.showSpinner" class="card-pf-info-image">
     <img ng-if="$ctrl.status.iconImage" ng-src="{{$ctrl.status.iconImage}}" alt=""
          class="info-img"/>
     <span class="info-icon {{$ctrl.status.iconClass}}"></span>
   </div>
-  <div class="card-pf-info-content">
+  <div ng-if="!$ctrl.showSpinner" class="card-pf-info-content card-pf-body" ng-class="{'show-spinner': $ctrl.showSpinner}">
     <h2 class="card-pf-title" ng-if="$ctrl.status.title">
       <a href="{{$ctrl.status.href}}" ng-if="$ctrl.status.href">
         <span class="">{{$ctrl.status.title}}</span>
