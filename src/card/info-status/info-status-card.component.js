@@ -33,10 +33,10 @@
        <pf-info-status-card status="infoStatusTitless"></pf-info-status-card>
        <br/>
        <label>With HTML</label>
-       <pf-info-status-card status="infoStatusAlt" html-content="true"></pf-info-status-card>
+       <pf-info-status-card status="infoStatusAlt" html-content="true" show-spinner="dataLoading" spinner-card-height="122" spinner-text="Loading"></pf-info-status-card>
        <br/>
        <label>Loading State</label>
-       <pf-info-status-card status="infoStatus2" spinner-card-height="200" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading"></pf-info-status-card>
+       <pf-info-status-card status="infoStatus2" show-top-border="true" spinner-card-height="122" show-spinner="dataLoading" spinner-text="Loading"></pf-info-status-card>
      </div>
    </div>
  </file>
@@ -59,6 +59,23 @@
       ]
     };
 
+    $scope.infoStatus2 = {
+        "title":"TinyCore-local",
+        "iconClass": "fa fa-shield",
+    };
+
+    $scope.infoStatusTitless = {
+      "iconImage": imagePath + "/OpenShift-logo.svg",
+      "info":[
+        "Infastructure: VMware",
+        "Vmware: 1 CPU (1 socket x 1 core), 1024 MB",
+        "12 Snapshots",
+        "Drift History: 1"
+        ]
+    };
+
+    $scope.infoStatusAlt = {};
+
     $timeout(function () {
       $scope.dataLoading = false;
 
@@ -73,27 +90,17 @@
           "Power status: on"
         ]
       };
-    }, 6000 );
 
-    $scope.infoStatusTitless = {
-      "iconImage": imagePath + "/OpenShift-logo.svg",
-      "info":[
-        "Infastructure: VMware",
-        "Vmware: 1 CPU (1 socket x 1 core), 1024 MB",
-        "12 Snapshots",
-        "Drift History: 1"
+      $scope.infoStatusAlt = {
+        "title":"Favorite Things",
+        "iconClass":"fa fa-heart",
+        "info":[
+          "<i class='fa fa-coffee'>",
+          "<i class='fa fa-motorcycle'>",
+          "<b>Tacos</b>"
         ]
-    };
-
-    $scope.infoStatusAlt = {
-      "title":"Favorite Things",
-      "iconClass":"fa fa-heart",
-      "info":[
-        "<i class='fa fa-coffee'>",
-        "<i class='fa fa-motorcycle'>",
-        "<b>Tacos</b>"
-      ]
-    };
+      };
+    }, 6000 );
    });
  </file>
 
