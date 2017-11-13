@@ -24,19 +24,26 @@
  <example module="patternfly.card">
 
  <file name="index.html">
-   <div ng-controller="CardDemoCtrl" style="display:inline-block;">
-     <div class="col-md-10">
-       <label>With Top Border, Icon Class, Href</label>
-       <pf-info-status-card status="infoStatus" show-top-border="true"></pf-info-status-card>
-       <br/>
-       <label>No Top Border, Icon Image, No Title</label>
-       <pf-info-status-card status="infoStatusTitless"></pf-info-status-card>
-       <br/>
-       <label>With HTML</label>
-       <pf-info-status-card status="infoStatusAlt" html-content="true" show-spinner="dataLoading" spinner-card-height="122" spinner-text="Loading"></pf-info-status-card>
-       <br/>
-       <label>Loading State</label>
-       <pf-info-status-card status="infoStatus2" show-top-border="true" spinner-card-height="122" show-spinner="dataLoading" spinner-text="Loading"></pf-info-status-card>
+   <div ng-controller="CardDemoCtrl" class="container-fluid">
+     <div class="row">
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>With Top Border, Icon Class, Href</label>
+         <pf-info-status-card status="infoStatus" show-top-border="true"></pf-info-status-card>
+       </div>
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>No Top Border, Icon Image, No Title</label>
+         <pf-info-status-card status="infoStatusTitless"></pf-info-status-card>
+       </div>
+     </div>
+     <div class="row">
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>With HTML</label>
+         <pf-info-status-card status="infoStatusAlt" html-content="true" show-spinner="dataLoading" spinner-card-height="145" spinner-text="Loading"></pf-info-status-card>
+       </div>
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>Loading State</label>
+         <pf-info-status-card status="infoStatus2" show-top-border="true" spinner-card-height="165" show-spinner="dataLoading" spinner-text="Loading"></pf-info-status-card>
+       </div>
      </div>
    </div>
  </file>

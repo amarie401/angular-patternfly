@@ -51,11 +51,11 @@
      <div class="row">
        <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
          <label>With Top Border</label>
-         <pf-aggregate-status-card status="status" show-top-border="true"></pf-aggregate-status-card>
+         <pf-aggregate-status-card status="status" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" spinner-card-height="90"></pf-aggregate-status-card>
        </div>
        <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
          <label>No Top Border</label>
-         <pf-aggregate-status-card status="status"></pf-aggregate-status-card>
+         <pf-aggregate-status-card status="status2"></pf-aggregate-status-card>
        </div>
      </div>
      <div class="row">
@@ -80,7 +80,7 @@
          <label>Loading State</label>
          <br>
          <br>
-         <pf-aggregate-status-card status="aggStatusAlt2" spinner-card-height="150" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" layout="tall"></pf-aggregate-status-card>
+         <pf-aggregate-status-card status="aggStatusAlt2" spinner-card-height="140" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" layout="tall"></pf-aggregate-status-card>
        </div>
      </div>
    </div>
@@ -94,22 +94,28 @@
 
     $scope.status = {
       "title":"Nodes",
-      "count":793,
       "href":"#",
       "iconClass": "fa fa-shield",
-      "notifications":[
-        {
-          "iconClass":"pficon pficon-error-circle-o",
-          "count":4,
-          "href":"#"
-        },
-        {
-          "iconClass":"pficon pficon-warning-triangle-o",
-          "count":1
-        }
-      ]
+      "notifications":[]
     };
 
+      $scope.status2 = {
+        "title":"Nodes",
+        "count":793,
+        "href":"#",
+        "iconClass": "fa fa-shield",
+        "notifications":[
+          {
+            "iconClass":"pficon pficon-error-circle-o",
+            "count":4,
+            "href":"#"
+          },
+          {
+            "iconClass":"pficon pficon-warning-triangle-o",
+            "count":1
+          }
+        ]
+      };
     $scope.aggStatusAlt = {
       "title":"Providers",
       "count":3,
@@ -135,6 +141,24 @@
     $timeout(function () {
       $scope.dataLoading = false;
 
+      $scope.status = {
+        "title":"Nodes",
+        "count":793,
+        "href":"#",
+        "iconClass": "fa fa-shield",
+        "notifications":[
+          {
+            "iconClass":"pficon pficon-error-circle-o",
+            "count":4,
+            "href":"#"
+          },
+          {
+            "iconClass":"pficon pficon-warning-triangle-o",
+            "count":1
+          }
+        ]
+      };
+
       $scope.aggStatusAlt2 = {
         "title":"Providers",
         "count":3,
@@ -151,7 +175,7 @@
           }
         ]
       };
-    }, 6000 );
+    }, 6000000 );
 
     $scope.miniAggStatus = {
       "iconClass":"pficon pficon-container-node",
