@@ -47,28 +47,41 @@
  <example module="patternfly.card">
 
  <file name="index.html">
-   <div ng-controller="CardDemoCtrl" style="display:inline-block;">
-     <div class="col-md-10">
-       <label>With Top Border</label>
-       <pf-aggregate-status-card status="status" show-top-border="true"></pf-aggregate-status-card>
-       <br/>
-       <label>No Top Border</label>
-       <pf-aggregate-status-card status="status"></pf-aggregate-status-card>
-       <br/>
-       <label>layout = "mini"</label>
-       <pf-aggregate-status-card status="miniAggStatus" show-top-border="true" layout="mini"></pf-aggregate-status-card>
-       <pf-aggregate-status-card status="miniAggStatus2" show-top-border="true" layout="mini"></pf-aggregate-status-card>
-       <br/>
-       <label>layout = "tall"</label>
-       <pf-aggregate-status-card status="aggStatusAlt" show-top-border="true" layout="tall"></pf-aggregate-status-card>
-       <br/>
-       <label>Alternate Layout</label>
-       <i>(depreciated, use layout = 'tall' instead)</i>
-       </br></br>
-       <pf-aggregate-status-card status="aggStatusAlt" show-top-border="true" alt-layout="true"></pf-aggregate-status-card>
-       <br/>
-       <label>Loading State</label>
-       <pf-aggregate-status-card status="aggStatusAlt2" spinner-card-height="150" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" layout="tall"></pf-aggregate-status-card>
+   <div ng-controller="CardDemoCtrl" class="container-fluid">
+     <div class="row">
+        <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+          <label>With Top Border</label>
+          <pf-aggregate-status-card status="status" show-top-border="true"></pf-aggregate-status-card>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>No Top Border</label>
+         <pf-aggregate-status-card status="status"></pf-aggregate-status-card>
+       </div>
+     </div>
+     <div class="row">
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>layout = "mini"</label>
+         <pf-aggregate-status-card status="miniAggStatus" show-top-border="true" layout="mini"></pf-aggregate-status-card>
+         <pf-aggregate-status-card status="miniAggStatus2" show-top-border="true" layout="mini"></pf-aggregate-status-card>
+       </div>
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>layout = "tall"</label>
+         <pf-aggregate-status-card status="aggStatusAlt" show-top-border="true" layout="tall"></pf-aggregate-status-card>
+       </div>
+     </div>
+     <div class="row">
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>Alternate Layout</label>
+         <br>
+         <i>(depreciated, use layout = 'tall' instead)</i>
+         <pf-aggregate-status-card status="aggStatusAlt" show-top-border="true" alt-layout="true"></pf-aggregate-status-card>
+       </div>
+       <div class="col-xs-12 col-sm-6 col-md-5 col-lg-4">
+         <label>Loading State</label>
+         <br>
+         <br>
+         <pf-aggregate-status-card status="aggStatusAlt2" spinner-card-height="150" show-top-border="true" show-spinner="dataLoading" spinner-text="Loading" layout="tall"></pf-aggregate-status-card>
+       </div>
      </div>
    </div>
  </file>
@@ -113,6 +126,11 @@
         }
       ]
     };
+
+      $scope.aggStatusAlt2 = {
+        "title":"Providers",
+        "notifications":[]
+      };
 
     $timeout(function () {
       $scope.dataLoading = false;
