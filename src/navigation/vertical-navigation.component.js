@@ -411,6 +411,9 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else {
           openedItem = item;
         }
+        // if (item.isHover === true) {
+        //   ctrl.ariaLabel = 'false';
+        // }
       }
       if (item.children && item.children.length > 0 && item.isHover === true && keyEvent.which === 27) {
         ctrl.handlePrimaryUnHover(item);
@@ -421,12 +424,18 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     ctrl.handleSecondaryEnter = function (item, keyEvent) {
       if (item.children && item.children.length > 0 && keyEvent.which === 13) {
 
-        ctrl.handleSecondaryHover(item);
-
+        // make sure to close secondary item if it’s open
         if (secondaryItem) {
           ctrl.handleSecondaryUnHover(secondaryItem);
         }
-        secondaryItem = item;
+
+        // if a new item was selected, make sure to open it
+        if (item !== secondaryItem ) {
+          ctrl.handleSecondaryHover(item);
+          secondaryItem = item;
+        } else {
+          secondaryItem = undefined;
+        }
       }
       if (item.children && item.children.length > 0 && item.isHover === true && keyEvent.which === 27) {
         ctrl.handleSecondaryUnHover(item);
