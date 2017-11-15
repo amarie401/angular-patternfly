@@ -30,6 +30,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     var hoverDelay = 500;
     var hideDelay = hoverDelay + 200;
     var openedItem;
+    var secondaryItem;
 
     var getBodyContentElement = function () {
       return angular.element(document.querySelector('.container-pf-nav-pf-vertical'));
@@ -419,7 +420,17 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handleSecondaryEnter = function (item, keyEvent) {
       if (item.children && item.children.length > 0 && keyEvent.which === 13) {
+
         ctrl.handleSecondaryHover(item);
+
+        if (secondaryItem) {
+          ctrl.handleSecondaryUnHover(secondaryItem);
+        }
+        secondaryItem = item;
+      }
+      if (item.children && item.children.length > 0 && item.isHover === true && keyEvent.which === 27) {
+        ctrl.handleSecondaryUnHover(item);
+        secondaryItem = undefined;
       }
     };
 
