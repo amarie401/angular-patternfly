@@ -10,8 +10,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     navigateCallback: '=?',
     itemClickCallback: '=?',
     updateActiveItemsOnClick: '@',
-    ignoreMobile: '@',
-    ariaLabel: '@'
+    ignoreMobile: '@'
   },
   //replace: true,
   templateUrl: 'navigation/vertical-navigation.html',
@@ -326,7 +325,6 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     ctrl.collapsedTertiaryNav = false;
     ctrl.navCollapsed = false;
     ctrl.forceHidden = false;
-    ctrl.ariaLabel = '';
 
     ctrl.clearActiveItems = function () {
       ctrl.items.forEach(function (item) {
@@ -474,7 +472,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverSecondaryNav = true;
               item.isHover = true;
-              ctrl.ariaLabel = 'true';
+              item.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -490,7 +488,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else if (item.navUnHoverTimeout === undefined && item.isHover) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
-            ctrl.ariaLabel = 'false';
+            item.ariaLabel = 'false';
             if (!primaryHover()) {
               ctrl.hoverSecondaryNav = false;
             }
@@ -511,7 +509,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverTertiaryNav = true;
               item.isHover = true;
-              ctrl.ariaLabel = 'true';
+              item.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -527,7 +525,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else if (item.navUnHoverTimeout === undefined) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
-            ctrl.ariaLabel = 'false';
+            item.ariaLabel = 'false';
             if (!secondaryHover()) {
               ctrl.hoverTertiaryNav = false;
             }
