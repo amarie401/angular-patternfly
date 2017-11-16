@@ -10,7 +10,8 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     navigateCallback: '=?',
     itemClickCallback: '=?',
     updateActiveItemsOnClick: '@',
-    ignoreMobile: '@'
+    ignoreMobile: '@',
+    ariaLabel: '@'
   },
   //replace: true,
   templateUrl: 'navigation/vertical-navigation.html',
@@ -325,6 +326,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     ctrl.collapsedTertiaryNav = false;
     ctrl.navCollapsed = false;
     ctrl.forceHidden = false;
+    ctrl.ariaLabel = '';
 
     ctrl.clearActiveItems = function () {
       ctrl.items.forEach(function (item) {
@@ -411,9 +413,6 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else {
           openedItem = item;
         }
-        // if (item.isHover === true) {
-        //   ctrl.ariaLabel = 'false';
-        // }
       }
       if (item.children && item.children.length > 0 && item.isHover === true && keyEvent.which === 27) {
         ctrl.handlePrimaryUnHover(item);
@@ -430,7 +429,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         }
 
         // if a new item was selected, make sure to open it
-        if (item !== secondaryItem ) {
+        if (item !== secondaryItem) {
           ctrl.handleSecondaryHover(item);
           secondaryItem = item;
         } else {
@@ -475,6 +474,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverSecondaryNav = true;
               item.isHover = true;
+              ctrl.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -490,6 +490,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else if (item.navUnHoverTimeout === undefined && item.isHover) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
+            ctrl.ariaLabel = 'false';
             if (!primaryHover()) {
               ctrl.hoverSecondaryNav = false;
             }
@@ -510,6 +511,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverTertiaryNav = true;
               item.isHover = true;
+              ctrl.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -525,6 +527,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else if (item.navUnHoverTimeout === undefined) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
+            ctrl.ariaLabel = 'false';
             if (!secondaryHover()) {
               ctrl.hoverTertiaryNav = false;
             }

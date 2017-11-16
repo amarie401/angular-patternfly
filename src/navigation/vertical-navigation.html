@@ -37,7 +37,7 @@
                        'mobile-nav-item-pf': item.isMobileItem && $ctrl.showMobileSecondary,
                        'mobile-secondary-item-pf': item.isMobileItem && $ctrl.showMobileTertiary}"
             ng-mouseenter="$ctrl.handlePrimaryHover(item)" ng-mouseleave="$ctrl.handlePrimaryUnHover(item)">
-          <a href="javascript:void(0)" ng-click="$ctrl.handlePrimaryClick(item, $event)" ng-keyup="$ctrl.handlePrimaryEnter(item, $event)">
+          <a href="" aria-expanded="{{$ctrl.ariaLabel}}" ng-click="$ctrl.handlePrimaryClick(item, $event)" ng-keyup="$ctrl.handlePrimaryEnter(item, $event)">
             <span class="{{item.iconClass}}" ng-if="item.iconClass" ng-class="{hidden: $ctrl.hiddenIcons}"
               uib-tooltip="{{item.title}}"
               tooltip-append-to-body="true"
@@ -68,7 +68,7 @@
                              'is-hover': secondaryItem.isHover,
                              'mobile-nav-item-pf': secondaryItem.isMobileItem}"
                   ng-mouseenter="$ctrl.handleSecondaryHover(secondaryItem)" ng-mouseleave="$ctrl.handleSecondaryUnHover(secondaryItem)">
-                <a href="javascript:void(0)" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
+                <a href="" aria-expanded="{{$ctrl.ariaLabel}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
                   <span class="list-group-item-value">{{secondaryItem.title}}</span>
                   <div ng-if="$ctrl.showBadges && secondaryItem.badges" class="badge-container-pf">
                     <div class="badge {{badge.badgeClass}}" ng-repeat="badge in secondaryItem.badges"
