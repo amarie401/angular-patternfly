@@ -464,6 +464,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     // Show secondary nav bar on hover of primary nav items
     ctrl.handlePrimaryHover = function (item) {
       if (item.children && item.children.length > 0) {
+        item.ariaLabel = 'true';
         if (!ctrl.inMobileState) {
           if (item.navUnHoverTimeout !== undefined) {
             $timeout.cancel(item.navUnHoverTimeout);
@@ -472,7 +473,6 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverSecondaryNav = true;
               item.isHover = true;
-              item.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -482,13 +482,13 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handlePrimaryUnHover = function (item) {
       if (item.children && item.children.length > 0) {
+        item.ariaLabel = 'false';
         if (item.navHoverTimeout !== undefined) {
           $timeout.cancel(item.navHoverTimeout);
           item.navHoverTimeout = undefined;
         } else if (item.navUnHoverTimeout === undefined && item.isHover) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
-            item.ariaLabel = 'false';
             if (!primaryHover()) {
               ctrl.hoverSecondaryNav = false;
             }
@@ -501,6 +501,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     // Show tertiary nav bar on hover of secondary nav items
     ctrl.handleSecondaryHover = function (item) {
       if (item.children && item.children.length > 0) {
+        item.ariaLabel = 'true';
         if (!ctrl.inMobileState) {
           if (item.navUnHoverTimeout !== undefined) {
             $timeout.cancel(item.navUnHoverTimeout);
@@ -509,7 +510,6 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             item.navHoverTimeout = $timeout(function () {
               ctrl.hoverTertiaryNav = true;
               item.isHover = true;
-              item.ariaLabel = 'true';
               item.navHoverTimeout = undefined;
             }, hoverDelay);
           }
@@ -519,13 +519,13 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handleSecondaryUnHover = function (item) {
       if (item.children && item.children.length > 0) {
+        item.ariaLabel = 'false';
         if (item.navHoverTimeout !== undefined) {
           $timeout.cancel(item.navHoverTimeout);
           item.navHoverTimeout = undefined;
         } else if (item.navUnHoverTimeout === undefined) {
           item.navUnHoverTimeout = $timeout(function () {
             item.isHover = false;
-            item.ariaLabel = 'false';
             if (!secondaryHover()) {
               ctrl.hoverTertiaryNav = false;
             }
