@@ -407,7 +407,11 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
         if (openedItem !== undefined) {
           ctrl.handlePrimaryUnHover(openedItem);
-          openedItem = undefined;
+          if (openedItem === item) {
+            openedItem = undefined;
+          } else {
+            openedItem = item;
+          }
         } else {
           openedItem = item;
         }
