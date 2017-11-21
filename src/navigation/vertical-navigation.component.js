@@ -15,7 +15,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
   //replace: true,
   templateUrl: 'navigation/vertical-navigation.html',
   transclude: true,
-  controller: function ($window, $timeout, $injector, $location, $rootScope) {
+  controller: function ($window, $timeout, $injector, $location, $rootScope, $scope) {
     'use strict';
     var routeChangeListener,
       ctrl = this,
@@ -464,7 +464,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     // Show secondary nav bar on hover of primary nav items
     ctrl.handlePrimaryHover = function (item) {
       if (item.children && item.children.length > 0) {
-        item.ariaLabel = 'true';
+        item.ariaLabel = true;
         if (!ctrl.inMobileState) {
           if (item.navUnHoverTimeout !== undefined) {
             $timeout.cancel(item.navUnHoverTimeout);
@@ -482,7 +482,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handlePrimaryUnHover = function (item) {
       if (item.children && item.children.length > 0) {
-        item.ariaLabel = 'false';
+        item.ariaLabel = false;
         if (item.navHoverTimeout !== undefined) {
           $timeout.cancel(item.navHoverTimeout);
           item.navHoverTimeout = undefined;
@@ -501,7 +501,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     // Show tertiary nav bar on hover of secondary nav items
     ctrl.handleSecondaryHover = function (item) {
       if (item.children && item.children.length > 0) {
-        item.ariaLabel = 'true';
+        item.ariaLabel = true;
         if (!ctrl.inMobileState) {
           if (item.navUnHoverTimeout !== undefined) {
             $timeout.cancel(item.navUnHoverTimeout);
@@ -519,7 +519,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handleSecondaryUnHover = function (item) {
       if (item.children && item.children.length > 0) {
-        item.ariaLabel = 'false';
+        item.ariaLabel = false;
         if (item.navHoverTimeout !== undefined) {
           $timeout.cancel(item.navHoverTimeout);
           item.navHoverTimeout = undefined;
