@@ -15,7 +15,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
   //replace: true,
   templateUrl: 'navigation/vertical-navigation.html',
   transclude: true,
-  controller: function ($window, $timeout, $injector, $location, $rootScope, $scope) {
+  controller: function ($window, $timeout, $injector, $location, $rootScope) {
     'use strict';
     var routeChangeListener,
       ctrl = this,

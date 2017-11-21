@@ -68,7 +68,7 @@
                              'is-hover': secondaryItem.isHover,
                              'mobile-nav-item-pf': secondaryItem.isMobileItem}"
                   ng-mouseenter="$ctrl.handleSecondaryHover(secondaryItem)" ng-mouseleave="$ctrl.handleSecondaryUnHover(secondaryItem)">
-                <a href="" ng-attr-aria-expanded="{{secondaryItem.children && secondaryItem.children.length > 0 ? (item.ariaLabel || false) : undefined}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
+                <a href="" ng-attr-aria-expanded="{{secondaryItem.children && secondaryItem.children.length > 0 ? (secondaryItem.ariaLabel || false) : undefined}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
                   <span class="list-group-item-value">{{secondaryItem.title}}</span>
                   <div ng-if="$ctrl.showBadges && secondaryItem.badges" class="badge-container-pf">
                     <div class="badge {{badge.badgeClass}}" ng-repeat="badge in secondaryItem.badges"
