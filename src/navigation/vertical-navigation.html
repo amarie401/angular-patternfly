@@ -29,7 +29,7 @@
                     'collapsed': $ctrl.navCollapsed,
                     'force-hide-secondary-nav-pf': $ctrl.forceHidden,
                     'show-mobile-nav': $ctrl.showMobileNav}">
-      <ul class="list-group" role="list" aria-label="Primary Navigation Menu">
+      <ul class="list-group" role="list" aria-label="Primary Navigation Menu" ng-if="$ctrl.useTouchScreen">
         <li ng-repeat="item in $ctrl.items" class="list-group-item" role="listitem"
             ng-class="{'secondary-nav-item-pf': item.children && item.children.length > 0,
                        'active': item.isActive,
@@ -37,7 +37,7 @@
                        'mobile-nav-item-pf': item.isMobileItem && $ctrl.showMobileSecondary,
                        'mobile-secondary-item-pf': item.isMobileItem && $ctrl.showMobileTertiary}"
             ng-mouseenter="$ctrl.handlePrimaryHover(item)" ng-mouseleave="$ctrl.handlePrimaryUnHover(item)">
-          <a href="" ng-attr-aria-expanded="{{item.children && item.children.length > 0 ? (item.ariaLabel || false) : undefined}}" ng-click="$ctrl.handlePrimaryClick(item, $event)" ng-keyup="$ctrl.handlePrimaryEnter(item, $event)">
+          <a role="button" href="javascript:void(0)" ng-attr-aria-expanded="{{item.children && item.children.length > 0 ? (item.ariaLabel || false) : undefined}}" ng-click="$ctrl.handlePrimaryClick(item, $event)" ng-keyup="$ctrl.handlePrimaryEnter(item, $event)">
             <span class="{{item.iconClass}}" ng-if="item.iconClass" ng-class="{hidden: $ctrl.hiddenIcons}"
               uib-tooltip="{{item.title}}"
               tooltip-append-to-body="true"
@@ -68,7 +68,7 @@
                              'is-hover': secondaryItem.isHover,
                              'mobile-nav-item-pf': secondaryItem.isMobileItem}"
                   ng-mouseenter="$ctrl.handleSecondaryHover(secondaryItem)" ng-mouseleave="$ctrl.handleSecondaryUnHover(secondaryItem)">
-                <a href="" ng-attr-aria-expanded="{{secondaryItem.children && secondaryItem.children.length > 0 ? (secondaryItem.ariaLabel || false) : undefined}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
+                <a role="button" href="javascript:void(0)" ng-attr-aria-expanded="{{secondaryItem.children && secondaryItem.children.length > 0 ? (secondaryItem.ariaLabel || false) : undefined}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
                   <span class="list-group-item-value">{{secondaryItem.title}}</span>
                   <div ng-if="$ctrl.showBadges && secondaryItem.badges" class="badge-container-pf">
                     <div class="badge {{badge.badgeClass}}" ng-repeat="badge in secondaryItem.badges"
@@ -94,6 +94,84 @@
                             uib-tooltip="{{badge.tooltip}}"
                             tooltip-append-to-body="true"
                             tooltip-placement="right">
+                            <span ng-if="badge.count && badge.iconClass" class="{{badge.iconClass}}"></span>
+                            <span ng-if="badge.count">{{badge.count}}</span>
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+      <ul class="list-group" role="list" aria-label="Primary Navigation Menu" ng-if="!$ctrl.useTouchScreen">
+        <li ng-repeat="item in $ctrl.items" class="list-group-item" role="listitem"
+            ng-class="{'secondary-nav-item-pf': item.children && item.children.length > 0,
+                       'active': item.isActive,
+                       'is-hover': item.isHover,
+                       'mobile-nav-item-pf': item.isMobileItem && $ctrl.showMobileSecondary,
+                       'mobile-secondary-item-pf': item.isMobileItem && $ctrl.showMobileTertiary}"
+            ng-mouseenter="$ctrl.handlePrimaryHover(item)" ng-mouseleave="$ctrl.handlePrimaryUnHover(item)">
+          <a href="javascript:void(0)" ng-attr-aria-expanded="{{item.children && item.children.length > 0 ? (item.ariaLabel || false) : undefined}}" ng-click="$ctrl.handlePrimaryClick(item, $event)" ng-keyup="$ctrl.handlePrimaryEnter(item, $event)">
+            <span class="{{item.iconClass}}" ng-if="item.iconClass" ng-class="{hidden: $ctrl.hiddenIcons}"
+                  uib-tooltip="{{item.title}}"
+                  tooltip-append-to-body="true"
+                  tooltip-enable="{{$ctrl.navCollapsed}}"
+                  tooltip-placement="bottom"
+                  tooltip-class="nav-pf-vertical-tooltip">
+            </span>
+            <span class="list-group-item-value">{{item.title}}</span>
+            <div ng-if="$ctrl.showBadges && item.badges" class="badge-container-pf">
+              <div class="badge {{badge.badgeClass}}" ng-repeat="badge in item.badges"
+                   uib-tooltip="{{badge.tooltip}}"
+                   tooltip-append-to-body="true"
+                   tooltip-placement="right">
+                <span ng-if="badge.count && badge.iconClass" class="{{badge.iconClass}}"></span>
+                <span ng-if="badge.count">{{badge.count}}</span>
+              </div>
+            </div>
+          </a>
+          <div ng-if="item.children && item.children.length > 0" class="nav-pf-secondary-nav" aria-hidden="{{!item.ariaLabel}}">
+            <div class="nav-item-pf-header">
+              <a class="secondary-collapse-toggle-pf" ng-click="$ctrl.collapseSecondaryNav(item, $event)" ng-class="{'collapsed': item.secondaryCollapsed}"></a>
+              <span>{{item.title}}</span>
+            </div>
+            <ul class="list-group" role="list" aria-label="Secondary Navigation Menu">
+              <li ng-repeat="secondaryItem in item.children" class="list-group-item" role="listitem"
+                  ng-class="{'tertiary-nav-item-pf': secondaryItem.children && secondaryItem.children.length > 0,
+                             'active': secondaryItem.isActive,
+                             'is-hover': secondaryItem.isHover,
+                             'mobile-nav-item-pf': secondaryItem.isMobileItem}"
+                  ng-mouseenter="$ctrl.handleSecondaryHover(secondaryItem)" ng-mouseleave="$ctrl.handleSecondaryUnHover(secondaryItem)">
+                <a href="javascript:void(0)" ng-attr-aria-expanded="{{secondaryItem.children && secondaryItem.children.length > 0 ? (secondaryItem.ariaLabel || false) : undefined}}" ng-click="$ctrl.handleSecondaryClick(item, secondaryItem, $event)" ng-keyup="$ctrl.handleSecondaryEnter(secondaryItem, $event)">
+                  <span class="list-group-item-value">{{secondaryItem.title}}</span>
+                  <div ng-if="$ctrl.showBadges && secondaryItem.badges" class="badge-container-pf">
+                    <div class="badge {{badge.badgeClass}}" ng-repeat="badge in secondaryItem.badges"
+                         uib-tooltip="{{badge.tooltip}}"
+                         tooltip-append-to-body="true"
+                         tooltip-placement="right">
+                      <span ng-if="badge.count && badge.iconClass" class="{{badge.iconClass}}"></span>
+                      <span ng-if="badge.count">{{badge.count}}</span>
+                    </div>
+                  </div>
+                </a>
+                <div ng-if="secondaryItem.children && secondaryItem.children.length > 0" class="nav-pf-tertiary-nav" aria-hidden="{{!secondaryItem.ariaLabel}}">
+                  <div class="nav-item-pf-header">
+                    <a class="tertiary-collapse-toggle-pf" ng-click="$ctrl.collapseTertiaryNav(secondaryItem, $event)" ng-class="{'collapsed': secondaryItem.tertiaryCollapsed}"></a>
+                    <span>{{secondaryItem.title}}</span>
+                  </div>
+                  <ul class="list-group" role="list" aria-label="Tertiary Navigation Menu">
+                    <li ng-repeat="tertiaryItem in secondaryItem.children" class="list-group-item" role="listitem" ng-class="{'active': tertiaryItem.isActive}">
+                      <a href="" ng-click="$ctrl.handleTertiaryClick(item, secondaryItem, tertiaryItem, $event)">
+                        <span class="list-group-item-value">{{tertiaryItem.title}}</span>
+                        <div ng-if="$ctrl.showBadges && tertiaryItem.badges" class="badge-container-pf">
+                          <div class="badge {{badge.badgeClass}}" ng-repeat="badge in tertiaryItem.badges"
+                               uib-tooltip="{{badge.tooltip}}"
+                               tooltip-append-to-body="true"
+                               tooltip-placement="right">
                             <span ng-if="badge.count && badge.iconClass" class="{{badge.iconClass}}"></span>
                             <span ng-if="badge.count">{{badge.count}}</span>
                           </div>

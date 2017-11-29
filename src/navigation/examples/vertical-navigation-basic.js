@@ -52,7 +52,7 @@
   <div id="verticalNavLayout" class="layout-pf layout-pf-fixed faux-layout hidden" ng-controller="vertNavController">
     <pf-vertical-navigation items="navigationItems" brand-alt="ANGULAR PATTERNFLY"
          show-badges="true" pinnable-menus="true" update-active-items-on-click="true"
-         navigate-callback="handleNavigateClick">
+         navigate-callback="handleNavigateClick" use-touch-screen="false" >
       <div>
         <ul class="nav navbar-nav">
           <li><button id="hideVerticalNav" ng-click="hideVerticalNav()" class="hide-vertical-nav">Exit Vertical Navigation Demo</button></li>

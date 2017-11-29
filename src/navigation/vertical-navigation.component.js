@@ -10,7 +10,8 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     navigateCallback: '=?',
     itemClickCallback: '=?',
     updateActiveItemsOnClick: '@',
-    ignoreMobile: '@'
+    ignoreMobile: '@',
+    useTouchScreen: '='
   },
   //replace: true,
   templateUrl: 'navigation/vertical-navigation.html',
@@ -196,7 +197,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
     };
 
     var navigateToItem = function (item) {
-      var navItem = getFirstNavigateChild(item);
+      var navItem = item;
       var navTo;
       if (navItem) {
         ctrl.showMobileNav = false;
@@ -208,6 +209,10 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             throw new Error('uiSref is defined on item, but no $state has been injected. ' +
               'Did you declare a dependency on "ui.router" module in your app?');
           }
+          if (openedItem !== undefined) {
+            // changing state - make sure to close menu
+            ctrl.handlePrimaryUnHover(openedItem);
+          }
           $state.go(navItem.uiSref, navItem.uiSrefOptions);
         } else {
           navTo = navItem.href;
@@ -218,6 +223,7 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
             $location.path(navTo);
           }
         }
+
         if (ctrl.navigateCallback) {
           ctrl.navigateCallback(navItem);
         }
@@ -402,12 +408,15 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
 
     ctrl.handlePrimaryEnter = function (item, keyEvent) {
       if (item.children && item.children.length > 0 && keyEvent.which === 13) {
-
         ctrl.handlePrimaryHover(item);
 
         if (openedItem !== undefined) {
           ctrl.handlePrimaryUnHover(openedItem);
-          openedItem = undefined;
+          if (openedItem === item) {
+            openedItem = undefined;
+          } else {
+            openedItem = item;
+          }
         } else {
           openedItem = item;
         }
@@ -447,9 +456,12 @@ angular.module('patternfly.navigation').component('pfVerticalNavigation', {
         } else {
           updateMobileMenu();
           navigateToItem(secondary);
+          ctrl.handlePrimaryUnHover(primary);
         }
       } else {
         navigateToItem(secondary);
+        ctrl.handlePrimaryUnHover(primary);
+
       }
     };
 
